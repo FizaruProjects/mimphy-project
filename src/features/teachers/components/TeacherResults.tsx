@@ -456,7 +456,7 @@ export const TeacherResults: React.FC<Props> = ({ results, packets }) => {
                 Detail Riwayat Pengerjaan
             </div>
             <div className="overflow-x-auto">
-                <table className="w-full text-sm text-left">
+                <table className="w-full text-sm text-left min-w-[700px]">
                     <thead className="bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-medium border-b border-slate-100 dark:border-slate-700">
                         <tr>
                             <th className="px-6 py-3 whitespace-nowrap">Waktu</th>

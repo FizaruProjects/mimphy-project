@@ -1,7 +1,7 @@
 import React, { useMemo, useRef, useState, useEffect } from 'react';
 import { SupabaseService } from '@/lib/supabaseService';
 import { Printer, BookOpen, Award, UserCircle, School, BrainCircuit, CheckCircle2, XCircle, ChevronLeft } from 'lucide-react';
-import { StudentProfile } from '@/types';
+import { StudentProfile, Achievement } from '@/types';
 
 interface Props {
   studentId: string;
@@ -12,6 +12,8 @@ interface Props {
 export const StudentReportCard: React.FC<Props> = ({ studentId, onBack, isTeacherView = false }) => {
   const componentRef = useRef<HTMLDivElement>(null);
   const [student, setStudent] = useState<StudentProfile | undefined>(undefined);
+  const [studentAchievements, setStudentAchievements] = useState<Achievement[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [reportData, setReportData] = useState<Map<string, { 
       teacherName: string, 
       topics: Map<string, {
@@ -21,15 +23,23 @@ export const StudentReportCard: React.FC<Props> = ({ studentId, onBack, isTeache
 
   useEffect(() => {
       const fetchData = async () => {
-          const allStudents = await SupabaseService.getStudents();
-          const s = allStudents.find(s => s.id === studentId);
-          setStudent(s);
+          setIsLoading(true);
+          try {
+              const allStudents = await SupabaseService.getStudents();
+              const s = allStudents.find(s => s.id === studentId);
+              setStudent(s);
 
           if (s) {
               const allResults = await SupabaseService.getResults();
               const myResults = allResults.filter(r => r.studentId === studentId);
               const allPackets = await SupabaseService.getPackets();
               const allTeachers = await SupabaseService.getTeachers();
+              const allAchievements = await SupabaseService.getAchievements();
+
+              // Get student's unlocked achievements
+              const unlockedIds = new Set(s.unlockedAchievements || []);
+              const unlocked = allAchievements.filter(ach => unlockedIds.has(ach.id));
+              setStudentAchievements(unlocked);
 
               // Structure: Subject -> { teacherName, topics: Map<TopicName, { indicators: Map<IndicatorName, Stats> }> }
               const data = new Map<string, { 
@@ -75,29 +85,30 @@ export const StudentReportCard: React.FC<Props> = ({ studentId, onBack, isTeache
               });
               setReportData(data);
           }
+          } catch (error) {
+              console.error("Error fetching report data:", error);
+          } finally {
+              setIsLoading(false);
+          }
       };
       fetchData();
   }, [studentId]);
 
   const handlePrint = () => {
-      if (componentRef.current) {
-          const printContent = componentRef.current.innerHTML;
-          const originalContents = document.body.innerHTML;
-          
-          // Create a temporary container for printing to avoid messing up React state
-          const printWindow = window.open('', '', 'height=600,width=800');
-          if (printWindow) {
-              printWindow.document.write('<html><head><title>Rapor Siswa</title>');
-              // Add Tailwind CDN for styling in print window
-              printWindow.document.write('<script src="https://cdn.tailwindcss.com"></script>');
-              printWindow.document.write('</head><body >');
-              printWindow.document.write(printContent);
-              printWindow.document.write('</body></html>');
-              printWindow.document.close();
-              printWindow.print();
-          }
-      }
+      document.body.classList.add('print-mode');
+      window.print();
+      setTimeout(() => {
+          document.body.classList.remove('print-mode');
+      }, 500);
   };
+
+  if (isLoading) {
+      return (
+          <div className="bg-stone-50 dark:bg-slate-900 min-h-screen p-4 md:p-8 flex items-center justify-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          </div>
+      );
+  }
 
   if (!student) return <div className="p-8 text-center text-red-500">Data siswa tidak ditemukan. ID: {studentId}</div>;
 
@@ -115,7 +126,34 @@ export const StudentReportCard: React.FC<Props> = ({ studentId, onBack, isTeache
             </div>
 
             {/* Printable Area */}
-            <div ref={componentRef} className="bg-white dark:bg-slate-800 p-8 md:p-12 rounded-[2rem] shadow-sm border border-stone-200 dark:border-slate-700 print:shadow-none print:border-none print:p-0 print:bg-white print:text-black">
+            <style>{`
+                @media print {
+                    body.print-mode {
+                        visibility: hidden;
+                        height: auto;
+                        overflow: visible;
+                    }
+                    body.print-mode #printable-area {
+                        visibility: visible;
+                        position: absolute;
+                        left: 0;
+                        top: 0;
+                        width: 100%;
+                        height: auto;
+                        z-index: 9999;
+                        background: white;
+                    }
+                    body.print-mode * {
+                        -webkit-print-color-adjust: exact !important;
+                        print-color-adjust: exact !important;
+                    }
+                    body.print-mode .print\\:hidden {
+                        display: none !important;
+                    }
+                    @page { size: A4 portrait; margin: 15mm; }
+                }
+            `}</style>
+            <div id="printable-area" ref={componentRef} className="bg-white dark:bg-slate-800 p-8 md:p-12 rounded-[2rem] shadow-sm border border-stone-200 dark:border-slate-700 print:shadow-none print:border-none print:p-0 print:bg-white print:text-black">
                 
                 {/* Report Header */}
                 <div className="text-center border-b-2 border-stone-100 dark:border-slate-700 pb-8 mb-8">
@@ -206,6 +244,28 @@ export const StudentReportCard: React.FC<Props> = ({ studentId, onBack, isTeache
                                 </div>
                             </div>
                         ))}
+                    </div>
+                )}
+
+                {/* Achievements Section */}
+                {studentAchievements.length > 0 && (
+                    <div className="mb-8 break-inside-avoid">
+                        <h3 className="font-bold text-lg text-stone-800 dark:text-white mb-4 flex items-center border-b border-stone-200 dark:border-slate-600 pb-2">
+                            <Award className="w-5 h-5 mr-2 text-stone-400" /> Prestasi Diraih
+                        </h3>
+                        <div className="grid grid-cols-2 gap-4">
+                            {studentAchievements.map(ach => (
+                                <div key={ach.id} className="flex items-center bg-stone-50 dark:bg-slate-700/30 p-3 rounded-lg border border-stone-100 dark:border-slate-600 print:bg-transparent print:border-stone-200">
+                                    <div className="w-10 h-10 rounded-full bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center mr-3 print:border print:border-stone-300">
+                                        {ach.iconUrl ? <img src={ach.iconUrl} alt="icon" className="w-6 h-6 object-contain" /> : <Award className="w-5 h-5 text-yellow-600 dark:text-yellow-500" />}
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-bold text-stone-800 dark:text-white leading-tight">{ach.title}</p>
+                                        <p className="text-xs text-stone-500 dark:text-slate-400 leading-tight">{ach.description}</p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 )}
 

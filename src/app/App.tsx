@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { UserSession } from '@/types';
 import { SupabaseService } from '@/lib/supabaseService';
@@ -12,6 +12,33 @@ import { ProtectedRoute } from '@/layouts/ProtectedRoute';
 
 const MainApp: React.FC = () => {
   const [session, setSession] = useState<UserSession>({ role: null });
+  const [isInitializing, setIsInitializing] = useState(true);
+
+  useEffect(() => {
+    const initAuth = async () => {
+      try {
+        const user = await SupabaseService.getCurrentUser();
+        if (user) {
+          setSession(user);
+        }
+      } catch (err) {
+        console.error("Auth init error", err);
+      } finally {
+        setIsInitializing(false);
+      }
+    };
+    initAuth();
+    
+    const { data: { subscription } } = SupabaseService.onAuthStateChange(async (event) => {
+        if (event === 'SIGNED_OUT') {
+            setSession({ role: null });
+        }
+    });
+
+    return () => {
+        subscription.unsubscribe();
+    };
+  }, []);
 
   const handleLogin = (newSession: UserSession) => {
     setSession(newSession);
@@ -21,6 +48,14 @@ const MainApp: React.FC = () => {
     setSession({ role: null });
     SupabaseService.logout();
   };
+
+  if (isInitializing) {
+      return (
+          <div className="min-h-screen flex items-center justify-center bg-stone-50 dark:bg-slate-900">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
+          </div>
+      );
+  }
 
   return (
     <BrowserRouter>

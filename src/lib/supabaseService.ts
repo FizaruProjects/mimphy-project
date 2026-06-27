@@ -3,6 +3,30 @@ import { supabase } from './supabaseClient';
 import { Question, QuizPacket, StudentResult, TeacherProfile, StudentProfile, Achievement, LearningStyle, DifferentiationMode, Difficulty, AchievementType } from '@/types';
 
 // This service mirrors StorageService but uses Supabase (Async)
+
+function parseTimestamp(val: any): number {
+    if (!val) return Date.now();
+    // If it's already a number
+    if (typeof val === 'number') {
+        // If it's extremely small, it might be seconds instead of milliseconds.
+        // E.g. anything before 1971 in ms is < 31536000000. 
+        // 1772985980 is year 2026 in seconds, 1772985980000 in ms.
+        if (val < 100000000000) return val * 1000; 
+        return val;
+    }
+    // If it's a string
+    if (typeof val === 'string') {
+        const num = Number(val);
+        if (!isNaN(num)) {
+             if (num < 100000000000) return num * 1000;
+             return num;
+        }
+        return new Date(val).getTime();
+    }
+    // Fallback
+    return new Date(val).getTime();
+}
+
 export const SupabaseService = {
   // --- QUESTIONS ---
   getQuestions: async (teacherId?: string): Promise<Question[]> => {
@@ -24,7 +48,7 @@ export const SupabaseService = {
         options: q.options,
         correctIndex: q.correct_index,
         explanation: q.explanation,
-        createdAt: new Date(q.created_at).getTime()
+        createdAt: parseTimestamp(q.created_at)
     }));
   },
 
@@ -65,7 +89,7 @@ export const SupabaseService = {
         questions: p.questions, // JSONB
         modules: p.modules, // JSONB
         learningMaterials: p.learning_materials, // JSONB
-        createdAt: new Date(p.created_at).getTime(),
+        createdAt: parseTimestamp(p.created_at),
         differentiationMode: p.differentiation_mode as DifferentiationMode
     }));
   },
@@ -82,7 +106,7 @@ export const SupabaseService = {
         questions: data.questions,
         modules: data.modules,
         learningMaterials: data.learning_materials,
-        createdAt: new Date(data.created_at).getTime(),
+        createdAt: parseTimestamp(data.created_at),
         differentiationMode: data.differentiation_mode as DifferentiationMode
     };
   },
@@ -260,7 +284,7 @@ export const SupabaseService = {
             answers: r.answers,
             selectedIndices: r.selected_indices,
             attemptNumber: r.attempt_number,
-            timestamp: r.created_at ? new Date(r.created_at).getTime() : (r.timestamp ? new Date(r.timestamp).getTime() : Date.now())
+            timestamp: parseTimestamp(r.created_at || r.timestamp)
         };
     });
   },
@@ -311,7 +335,7 @@ export const SupabaseService = {
           subject: u.subject,
           passwordHash: '', // Not needed/available
           isActive: u.is_active !== false, 
-          joinedAt: new Date(u.created_at).getTime(),
+          joinedAt: parseTimestamp(u.joined_at || u.created_at),
           photoUrl: u.photo_url
       }));
   },
@@ -327,7 +351,7 @@ export const SupabaseService = {
           schoolName: u.school_name,
           passwordHash: '',
           isActive: u.is_active !== false,
-          joinedAt: new Date(u.created_at).getTime(),
+          joinedAt: parseTimestamp(u.joined_at || u.created_at),
           photoUrl: u.photo_url,
           unlockedAchievements: u.unlocked_achievements,
           learningStyle: u.learning_style
@@ -477,5 +501,33 @@ export const SupabaseService = {
 
   updatePassword: async (newPassword: string) => {
       return await supabase.auth.updateUser({ password: newPassword });
+  },
+
+  getCurrentUser: async () => {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      if (error || !session) return null;
+      
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', session.user.id)
+        .single();
+        
+      if (!profile) return null;
+
+      return {
+          role: profile.role,
+          userId: session.user.id,
+          name: profile.name,
+          className: profile.class_name,
+          schoolName: profile.school_name,
+          learningStyle: profile.learning_style,
+          photoUrl: profile.photo_url,
+          unlockedAchievements: profile.unlocked_achievements
+      };
+  },
+
+  onAuthStateChange: (callback: (event: string, session: any) => void) => {
+      return supabase.auth.onAuthStateChange(callback);
   }
 };

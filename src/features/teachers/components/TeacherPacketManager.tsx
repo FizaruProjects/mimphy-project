@@ -118,7 +118,7 @@ export const TeacherPacketManager: React.FC<Props> = ({ packets, onRefresh }) =>
             <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 transition-colors">
                 <h3 className="font-semibold text-lg mb-6 text-slate-800 dark:text-white">Daftar Paket Soal Saya</h3>
                 <div className="overflow-x-auto">
-                    <table className="w-full text-sm text-left">
+                    <table className="w-full text-sm text-left min-w-[700px]">
                         <thead className="bg-slate-50 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold border-b border-slate-200 dark:border-slate-600">
                             <tr>
                                 <th className="px-6 py-3 rounded-tl-lg">Nama Paket</th>
