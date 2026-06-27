@@ -1,16 +1,16 @@
-
 import React, { useState, useEffect } from 'react';
-import { UserSession, LearningStyle } from './types';
-import { SupabaseService } from './services/supabaseService';
-import { TeacherDashboard } from './components/TeacherDashboard';
-import { StudentDashboard } from './components/StudentDashboard';
-import { AdminDashboard } from './components/AdminDashboard';
-import { ThemeProvider } from './contexts/ThemeContext';
-import { ThemeToggle } from './components/ThemeToggle';
-import { School, User, Lock, Mail, ArrowRight, Cat, AlertCircle, BrainCircuit, UserCheck } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { UserSession, LearningStyle } from '@/types';
+import { SupabaseService } from '@/lib/supabaseService';
+import { School, User, Lock, Mail, ArrowRight, Cat, AlertCircle, UserCheck } from 'lucide-react';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
-const MainApp: React.FC = () => {
-  const [session, setSession] = useState<UserSession>({ role: null });
+interface LoginPageProps {
+  onLogin: (session: UserSession) => void;
+}
+
+export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
+  const navigate = useNavigate();
   const [authMode, setAuthMode] = useState<'selection' | 'student_login' | 'teacher_login' | 'admin' | 'verified' | 'reset_password'>('selection');
   
   // Form States
@@ -28,7 +28,6 @@ const MainApp: React.FC = () => {
           } else if (hash.includes('type=recovery')) {
               setAuthMode('reset_password');
           }
-          // Clear hash to prevent infinite loops or showing tokens
           window.history.replaceState(null, '', window.location.pathname);
       }
   }, []);
@@ -37,13 +36,6 @@ const MainApp: React.FC = () => {
       setFormData({ name: '', email: '', password: '', className: '', schoolName: '', learningStyle: LearningStyle.VISUAL });
       setErrorMsg('');
       setSuccessMsg('');
-  };
-
-  const handleLogout = () => {
-      setSession({ role: null });
-      setAuthMode('selection');
-      clearForms();
-      SupabaseService.logout(); // Need to add this to SupabaseService
   };
 
   const handleInput = (key: string, value: string) => setFormData(prev => ({ ...prev, [key]: value }));
@@ -67,7 +59,6 @@ const MainApp: React.FC = () => {
       }
   };
 
-  // --- AUTH HANDLERS ---
   const handleLogin = async (roleTarget: string) => {
       setIsLoading(true);
       setErrorMsg('');
@@ -79,7 +70,7 @@ const MainApp: React.FC = () => {
             if (roleTarget === 'teacher' && res.role !== 'teacher') { setErrorMsg("Bukan akun guru"); return; }
             if (roleTarget === 'student' && res.role !== 'student') { setErrorMsg("Bukan akun siswa"); return; }
 
-            setSession({ 
+            const session: UserSession = { 
                 role: res.role, 
                 userId: res.user?.id, 
                 name: res.user?.name || (res.role === 'admin' ? 'Administrator' : ''), 
@@ -87,8 +78,16 @@ const MainApp: React.FC = () => {
                 schoolName: res.user?.schoolName,
                 photoUrl: res.user?.photoUrl,
                 learningStyle: res.user?.learningStyle
-            });
+            };
+            
             setErrorMsg('');
+            onLogin(session);
+            
+            // Redirect based on role
+            if (res.role === 'student') navigate('/student');
+            if (res.role === 'teacher') navigate('/teacher');
+            if (res.role === 'admin') navigate('/admin');
+            
         } else {
             setErrorMsg(res.message || 'Login gagal');
         }
@@ -99,22 +98,14 @@ const MainApp: React.FC = () => {
       }
   };
 
-  // --- RENDER DASHBOARDS ---
-  if (session.role === 'student') return <StudentDashboard session={session} onLogout={handleLogout} />;
-  if (session.role === 'teacher') return <TeacherDashboard session={session} onLogout={handleLogout} />;
-  if (session.role === 'admin') return <AdminDashboard onLogout={handleLogout} />;
-
-  // --- RENDER AUTH UI ---
   return (
     <div className="min-h-screen flex items-center justify-center p-4 md:p-8 bg-gradient-to-br from-orange-50 via-white to-red-50 dark:from-slate-900 dark:via-red-950/20 dark:to-slate-900 transition-colors duration-500">
-      
       <div className="absolute top-4 right-4 z-50">
           <ThemeToggle />
       </div>
 
       <div className="max-w-5xl w-full bg-white/80 dark:bg-slate-800/90 backdrop-blur-xl rounded-[2.5rem] shadow-[0_20px_60px_-15px_rgba(220,38,38,0.15)] dark:shadow-none dark:border dark:border-slate-700 overflow-hidden flex flex-col md:flex-row min-h-[650px] relative transition-colors duration-300">
         
-        {/* Left Side: Brand */}
         <div className="md:w-5/12 bg-gradient-to-br from-red-700 via-red-600 to-orange-600 p-8 md:p-10 text-white flex flex-col justify-between relative overflow-hidden">
             <div className="relative z-10 text-center md:text-left">
                 <div className="inline-flex relative mb-6 group">
@@ -132,7 +123,6 @@ const MainApp: React.FC = () => {
             </div>
         </div>
 
-        {/* Right Side: Forms */}
         <div className="md:w-7/12 p-8 md:p-14 bg-white/50 dark:bg-slate-800 relative flex flex-col justify-center transition-colors duration-300">
             {authMode !== 'selection' && (
                 <button 
@@ -270,11 +260,3 @@ const InputGroup = ({ label, type = "text", value, onChange, icon: Icon, placeho
         </div>
     </div>
 );
-
-const App: React.FC = () => (
-    <ThemeProvider>
-        <MainApp />
-    </ThemeProvider>
-);
-
-export default App;

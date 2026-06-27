@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { StudentProfile, StudentResult, QuizPacket, Question, LearningStyle, AbilityLevel } from '../types';
-import { SupabaseService } from '../services/supabaseService';
+import { StudentProfile, StudentResult, QuizPacket, Question, LearningStyle, AbilityLevel } from '@/types';
+import { SupabaseService } from '@/lib/supabaseService';
 import { User, BookOpen, BrainCircuit, Award, Calendar, Download, Printer, Search, X, ChevronDown, BarChart3, TrendingUp, AlertCircle } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Legend, Cell } from 'recharts';
 import html2pdf from 'html2pdf.js';

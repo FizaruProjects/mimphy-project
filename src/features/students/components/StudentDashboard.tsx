@@ -1,15 +1,15 @@
 
 import React, { useState, useEffect } from 'react';
-import { QuizPacket, AbilityLevel, StudentResult, UserSession, Achievement, DifferentiationMode, LearningStyle, LearningMaterial, ModuleItem } from '../types';
-import { SupabaseService } from '../services/supabaseService';
-import { generateLearningModule } from '../services/geminiService';
+import { QuizPacket, AbilityLevel, StudentResult, UserSession, Achievement, DifferentiationMode, LearningStyle, LearningMaterial, ModuleItem } from '@/types';
+import { SupabaseService } from '@/lib/supabaseService';
+import { generateLearningModule } from '@/lib/geminiService';
 import { BookOpen, ChevronRight, ChevronLeft, Loader2, FileText, Download, Flag, LogOut, Sparkles, UserCircle, Star, Award, Zap, Camera, Medal, Home, LayoutGrid, CheckCircle2, BrainCircuit, Menu, X, Youtube, Play, ExternalLink, ArrowRight, Link } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
-import { ThemeToggle } from './ThemeToggle';
-import { ContributionGraph } from './ContributionGraph';
-import { StudentReportCard } from './StudentReportCard';
+import { ThemeToggle } from '@/components/ThemeToggle';
+import { ContributionGraph } from '@/components/ContributionGraph';
+import { StudentReportCard } from '@/features/students/components/StudentReportCard';
 
 interface Props {
   session: UserSession;

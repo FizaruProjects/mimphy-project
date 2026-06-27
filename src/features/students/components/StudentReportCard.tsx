@@ -1,7 +1,7 @@
 import React, { useMemo, useRef, useState, useEffect } from 'react';
-import { SupabaseService } from '../services/supabaseService';
+import { SupabaseService } from '@/lib/supabaseService';
 import { Printer, BookOpen, Award, UserCircle, School, BrainCircuit, CheckCircle2, XCircle, ChevronLeft } from 'lucide-react';
-import { StudentProfile } from '../types';
+import { StudentProfile } from '@/types';
 
 interface Props {
   studentId: string;

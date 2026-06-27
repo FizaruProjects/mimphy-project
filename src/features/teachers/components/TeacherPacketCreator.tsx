@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
-import { Question, QuizPacket, DifferentiationMode, LearningMaterial, MaterialType, PacketModules, ModuleItem } from '../types';
-import { SupabaseService } from '../services/supabaseService';
+import { Question, QuizPacket, DifferentiationMode, LearningMaterial, MaterialType, PacketModules, ModuleItem } from '@/types';
+import { SupabaseService } from '@/lib/supabaseService';
 import { FileText, Image as ImageIcon, Layers, BrainCircuit, Youtube, Link, Upload, Trash2, Plus, PlayCircle, BookOpen } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';

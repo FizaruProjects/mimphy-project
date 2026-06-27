@@ -1,8 +1,8 @@
 
 import React, { useState } from 'react';
-import { Question, Difficulty } from '../types';
-import { SupabaseService } from '../services/supabaseService';
-import { generateQuestionAI } from '../services/geminiService';
+import { Question, Difficulty } from '@/types';
+import { SupabaseService } from '@/lib/supabaseService';
+import { generateQuestionAI } from '@/lib/geminiService';
 import { Plus, Save, Wand2, Loader2, X, Image as ImageIcon, Pencil, RotateCcw, Trash2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';

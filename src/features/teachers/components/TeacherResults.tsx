@@ -1,8 +1,8 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { StudentResult, AbilityLevel, QuizPacket, LearningStyle, StudentProfile } from '../types';
-import { ExportService } from '../services/exportService';
-import { SupabaseService } from '../services/supabaseService';
+import { StudentResult, AbilityLevel, QuizPacket, LearningStyle, StudentProfile } from '@/types';
+import { ExportService } from '@/lib/exportService';
+import { SupabaseService } from '@/lib/supabaseService';
 import { RefreshCw, Users, Filter, FileSpreadsheet, Download, X, Calendar, BrainCircuit, BarChart3, Eye, Ear, Activity } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 

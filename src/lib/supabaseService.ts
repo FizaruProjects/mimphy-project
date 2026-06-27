@@ -1,6 +1,6 @@
 
 import { supabase } from './supabaseClient';
-import { Question, QuizPacket, StudentResult, TeacherProfile, StudentProfile, Achievement, LearningStyle, DifferentiationMode, Difficulty, AchievementType } from '../types';
+import { Question, QuizPacket, StudentResult, TeacherProfile, StudentProfile, Achievement, LearningStyle, DifferentiationMode, Difficulty, AchievementType } from '@/types';
 
 // This service mirrors StorageService but uses Supabase (Async)
 export const SupabaseService = {

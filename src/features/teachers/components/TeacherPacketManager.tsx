@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
-import { QuizPacket, Question, DifferentiationMode } from '../types';
-import { SupabaseService } from '../services/supabaseService';
+import { QuizPacket, Question, DifferentiationMode } from '@/types';
+import { SupabaseService } from '@/lib/supabaseService';
 import { Eye, Edit, Trash2, X, Save, ArrowUp, ArrowDown, AlertTriangle, Layers, BrainCircuit, CheckCircle } from 'lucide-react';
 
 interface Props {

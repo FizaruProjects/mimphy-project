@@ -1,6 +1,6 @@
 
 import XLSX from 'xlsx-js-style';
-import { QuizPacket, StudentResult, Question } from '../types';
+import { QuizPacket, StudentResult, Question } from '@/types';
 
 export const ExportService = {
   /**

@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { SupabaseService } from '../services/supabaseService';
-import { TeacherProfile, StudentProfile, QuizPacket, Question, StudentResult, AbilityLevel, LearningStyle } from '../types';
+import { SupabaseService } from '@/lib/supabaseService';
+import { TeacherProfile, StudentProfile, QuizPacket, Question, StudentResult, AbilityLevel, LearningStyle } from '@/types';
 import { Users, BookOpen, BarChart3, Shield, Key, Power, UserCheck, UserX, Search, AlertCircle, X, AlertTriangle, Lock, LogOut, GraduationCap, School, Plus, BrainCircuit, Mail } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, Legend, PieChart, Pie, Cell } from 'recharts';
-import { ThemeToggle } from './ThemeToggle';
-import { ContributionGraph } from './ContributionGraph';
+import { ThemeToggle } from '@/components/ThemeToggle';
+import { ContributionGraph } from '@/components/ContributionGraph';
 
 interface Props {
     onLogout: () => void;

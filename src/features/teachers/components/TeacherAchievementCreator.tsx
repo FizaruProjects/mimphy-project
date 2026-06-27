@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
-import { Achievement, AchievementType } from '../types';
-import { SupabaseService } from '../services/supabaseService';
+import { Achievement, AchievementType } from '@/types';
+import { SupabaseService } from '@/lib/supabaseService';
 import { Medal, Plus, Trash2, Image as ImageIcon, CheckCircle } from 'lucide-react';
 
 interface Props {

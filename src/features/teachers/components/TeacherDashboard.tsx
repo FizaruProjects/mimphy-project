@@ -1,18 +1,18 @@
 
 import React, { useState, useEffect } from 'react';
-import { Question, QuizPacket, StudentResult, UserSession } from '../types';
-import { SupabaseService } from '../services/supabaseService';
+import { Question, QuizPacket, StudentResult, UserSession } from '@/types';
+import { SupabaseService } from '@/lib/supabaseService';
 import { BookOpen, Plus, BarChart3, LogOut, Camera, UserCircle2, Medal, FolderCog, User } from 'lucide-react';
-import { ThemeToggle } from './ThemeToggle';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 // Import sub-components
-import { TeacherQuestionBank } from './TeacherQuestionBank';
-import { TeacherPacketCreator } from './TeacherPacketCreator';
-import { TeacherResults } from './TeacherResults';
-import { TeacherAchievementCreator } from './TeacherAchievementCreator';
-import { TeacherPacketManager } from './TeacherPacketManager';
-import { ContributionGraph } from './ContributionGraph';
-import { TeacherStudentReport } from './TeacherStudentReport';
+import { TeacherQuestionBank } from '@/features/teachers/components/TeacherQuestionBank';
+import { TeacherPacketCreator } from '@/features/teachers/components/TeacherPacketCreator';
+import { TeacherResults } from '@/features/teachers/components/TeacherResults';
+import { TeacherAchievementCreator } from '@/features/teachers/components/TeacherAchievementCreator';
+import { TeacherPacketManager } from '@/features/teachers/components/TeacherPacketManager';
+import { ContributionGraph } from '@/components/ContributionGraph';
+import { TeacherStudentReport } from '@/features/teachers/components/TeacherStudentReport';
 
 interface Props {
     session: UserSession;
