@@ -4,6 +4,7 @@ import { TeacherProfile, StudentProfile, QuizPacket, Question, StudentResult, Ab
 import { Users, BookOpen, BarChart3, Shield, Key, Power, UserCheck, UserX, Search, AlertCircle, X, AlertTriangle, Lock, LogOut, GraduationCap, School, Plus, BrainCircuit, Mail } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, Legend, PieChart, Pie, Cell } from 'recharts';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { DashboardLayout } from '@/layouts/DashboardLayout';
 import { ContributionGraph } from '@/components/ContributionGraph';
 
 interface Props {
@@ -177,214 +178,183 @@ export const AdminDashboard: React.FC<Props> = ({ onLogout }) => {
     }, [teachers, packets, results]);
 
     return (
-        <div className="max-w-7xl mx-auto p-4 md:p-8 space-y-6 relative bg-stone-50 dark:bg-slate-900 min-h-screen transition-colors duration-300">
-            {/* --- CUSTOM CONFIRMATION MODAL --- */}
-            {resetTarget && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-red-900/20 backdrop-blur-sm animate-in fade-in duration-200">
-                    <div className="bg-white dark:bg-slate-800 rounded-[2rem] shadow-2xl w-full max-w-md p-8 animate-in zoom-in-95 duration-200 border border-white dark:border-slate-700">
-                        <div className="flex items-center justify-between mb-6">
-                            <h3 className="text-xl font-bold text-slate-800 dark:text-white flex items-center">
-                                <AlertTriangle className="w-6 h-6 text-orange-400 mr-2" />
-                                Reset Password
-                            </h3>
-                            <button onClick={() => setResetTarget(null)} className="text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 bg-stone-50 dark:bg-slate-700 p-2 rounded-full">
-                                <X className="w-5 h-5" />
-                            </button>
-                        </div>
-                        
-                        <div className="mb-6">
-                            <p className="text-slate-600 dark:text-slate-300 mb-4 font-medium">
-                                Anda akan mengirimkan link reset password ke email pengguna ini.
-                            </p>
-                            <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-100 dark:border-orange-900/40 p-4 rounded-xl font-bold text-slate-800 dark:text-orange-100 text-center mb-4 flex flex-col items-center">
-                                <Mail className="w-8 h-8 mb-2 text-orange-500" />
-                                {resetTarget.name}
+        <DashboardLayout
+            session={{ role: 'admin', userId: 'admin', name: 'Administrator' }}
+            onLogout={onLogout}
+            activeTab={activeTab}
+            setActiveTab={setActiveTab as any}
+            brandName="Mimphy Admin"
+            tabs={[
+                { id: 'overview', label: 'Ringkasan', icon: BarChart3 },
+                { id: 'teachers', label: 'Guru', icon: School },
+                { id: 'students', label: 'Siswa', icon: GraduationCap },
+                { id: 'analytics', label: 'Analitik', icon: BookOpen },
+            ]}
+        >
+            <div className="space-y-6 relative transition-colors duration-300">
+                {/* --- CUSTOM CONFIRMATION MODAL --- */}
+                {resetTarget && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-red-900/20 backdrop-blur-sm animate-in fade-in duration-200">
+                        <div className="bg-white dark:bg-slate-800 rounded-[2rem] shadow-2xl w-full max-w-md p-8 animate-in zoom-in-95 duration-200 border border-white dark:border-slate-700">
+                            <div className="flex items-center justify-between mb-6">
+                                <h3 className="text-xl font-bold text-slate-800 dark:text-white flex items-center">
+                                    <AlertTriangle className="w-6 h-6 text-orange-400 mr-2" />
+                                    Reset Password
+                                </h3>
+                                <button onClick={() => setResetTarget(null)} className="text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 bg-stone-50 dark:bg-slate-700 p-2 rounded-full">
+                                    <X className="w-5 h-5" />
+                                </button>
                             </div>
-                            <p className="text-xs text-slate-400 text-center">
-                                Pengguna akan menerima email instruksi untuk membuat password baru.
-                            </p>
-                        </div>
+                            
+                            <div className="mb-6">
+                                <p className="text-slate-600 dark:text-slate-300 mb-4 font-medium">
+                                    Anda akan mengirimkan link reset password ke email pengguna ini.
+                                </p>
+                                <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-100 dark:border-orange-900/40 p-4 rounded-xl font-bold text-slate-800 dark:text-orange-100 text-center mb-4 flex flex-col items-center">
+                                    <Mail className="w-8 h-8 mb-2 text-orange-500" />
+                                    {resetTarget.name}
+                                </div>
+                                <p className="text-xs text-slate-400 text-center">
+                                    Pengguna akan menerima email instruksi untuk membuat password baru.
+                                </p>
+                            </div>
 
-                        <div className="flex space-x-3">
-                            <button 
-                                onClick={() => setResetTarget(null)}
-                                className="flex-1 py-3 px-4 border border-slate-300 dark:border-slate-600 rounded-xl text-slate-600 dark:text-slate-300 font-bold hover:bg-stone-50 dark:hover:bg-slate-700 transition-colors"
-                            >
-                                Batal
-                            </button>
-                            <button 
-                                onClick={executeReset}
-                                className="flex-1 py-3 px-4 bg-orange-500 text-white rounded-xl font-bold hover:bg-orange-600 shadow-lg shadow-orange-200 dark:shadow-none transition-all"
-                            >
-                                Kirim Email
-                            </button>
+                            <div className="flex space-x-3">
+                                <button 
+                                    onClick={() => setResetTarget(null)}
+                                    className="flex-1 py-3 px-4 border border-slate-300 dark:border-slate-600 rounded-xl text-slate-600 dark:text-slate-300 font-bold hover:bg-stone-50 dark:hover:bg-slate-700 transition-colors"
+                                >
+                                    Batal
+                                </button>
+                                <button 
+                                    onClick={executeReset}
+                                    className="flex-1 py-3 px-4 bg-orange-500 text-white rounded-xl font-bold hover:bg-orange-600 shadow-lg shadow-orange-200 dark:shadow-none transition-all"
+                                >
+                                    Kirim Email
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )}
 
-            {/* --- CREATE USER MODAL --- */}
-            {showCreateModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-red-900/20 backdrop-blur-sm animate-in fade-in duration-200">
-                    <div className="bg-white dark:bg-slate-800 rounded-[2rem] shadow-2xl w-full max-w-lg p-8 animate-in zoom-in-95 duration-200 border border-white dark:border-slate-700 max-h-[90vh] overflow-y-auto">
-                        <div className="flex items-center justify-between mb-6">
-                            <h3 className="text-xl font-bold text-slate-800 dark:text-white flex items-center">
-                                <Plus className="w-6 h-6 text-red-500 mr-2" />
-                                Tambah {showCreateModal === 'teacher' ? 'Guru' : 'Siswa'} Baru
-                            </h3>
-                            <button onClick={() => setShowCreateModal(null)} className="text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 bg-stone-50 dark:bg-slate-700 p-2 rounded-full">
-                                <X className="w-5 h-5" />
-                            </button>
-                        </div>
-
-                        <div className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">Nama Lengkap</label>
-                                <input 
-                                    type="text" 
-                                    className="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 rounded-xl focus:border-red-400 outline-none text-slate-800 dark:text-white font-medium"
-                                    placeholder="Nama Lengkap"
-                                    value={createFormData.name}
-                                    onChange={(e) => setCreateFormData({...createFormData, name: e.target.value})}
-                                />
+                {/* --- CREATE USER MODAL --- */}
+                {showCreateModal && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-red-900/20 backdrop-blur-sm animate-in fade-in duration-200">
+                        <div className="bg-white dark:bg-slate-800 rounded-[2rem] shadow-2xl w-full max-w-lg p-8 animate-in zoom-in-95 duration-200 border border-white dark:border-slate-700 max-h-[90vh] overflow-y-auto">
+                            <div className="flex items-center justify-between mb-6">
+                                <h3 className="text-xl font-bold text-slate-800 dark:text-white flex items-center">
+                                    <Plus className="w-6 h-6 text-red-500 mr-2" />
+                                    Tambah {showCreateModal === 'teacher' ? 'Guru' : 'Siswa'} Baru
+                                </h3>
+                                <button onClick={() => setShowCreateModal(null)} className="text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 bg-stone-50 dark:bg-slate-700 p-2 rounded-full">
+                                    <X className="w-5 h-5" />
+                                </button>
                             </div>
 
-                            {showCreateModal === 'teacher' && (
+                            <div className="space-y-4">
                                 <div>
-                                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">Mata Pelajaran</label>
+                                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">Nama Lengkap</label>
                                     <input 
                                         type="text" 
                                         className="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 rounded-xl focus:border-red-400 outline-none text-slate-800 dark:text-white font-medium"
-                                        placeholder="Contoh: Fisika, Matematika, Biologi"
-                                        value={createFormData.subject}
-                                        onChange={(e) => setCreateFormData({...createFormData, subject: e.target.value})}
+                                        placeholder="Nama Lengkap"
+                                        value={createFormData.name}
+                                        onChange={(e) => setCreateFormData({...createFormData, name: e.target.value})}
                                     />
                                 </div>
-                            )}
 
-                            <div>
-                                <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">Email</label>
-                                <input 
-                                    type="email" 
-                                    className="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 rounded-xl focus:border-red-400 outline-none text-slate-800 dark:text-white font-medium"
-                                    placeholder="Email"
-                                    value={createFormData.email}
-                                    onChange={(e) => setCreateFormData({...createFormData, email: e.target.value})}
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">Password</label>
-                                <input 
-                                    type="password" 
-                                    className="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 rounded-xl focus:border-red-400 outline-none text-slate-800 dark:text-white font-medium"
-                                    placeholder="Password"
-                                    value={createFormData.password}
-                                    onChange={(e) => setCreateFormData({...createFormData, password: e.target.value})}
-                                />
-                            </div>
-
-                            {showCreateModal === 'student' && (
-                                <>
+                                {showCreateModal === 'teacher' && (
                                     <div>
-                                        <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">Nama Sekolah</label>
+                                        <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">Mata Pelajaran</label>
                                         <input 
                                             type="text" 
                                             className="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 rounded-xl focus:border-red-400 outline-none text-slate-800 dark:text-white font-medium"
-                                            placeholder="Nama Sekolah"
-                                            value={createFormData.schoolName}
-                                            onChange={(e) => setCreateFormData({...createFormData, schoolName: e.target.value})}
+                                            placeholder="Contoh: Fisika, Matematika, Biologi"
+                                            value={createFormData.subject}
+                                            onChange={(e) => setCreateFormData({...createFormData, subject: e.target.value})}
                                         />
                                     </div>
-                                    <div>
-                                        <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">Kelas</label>
-                                        <input 
-                                            type="text" 
-                                            className="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 rounded-xl focus:border-red-400 outline-none text-slate-800 dark:text-white font-medium"
-                                            placeholder="Kelas (misal: XII IPA 1)"
-                                            value={createFormData.className}
-                                            onChange={(e) => setCreateFormData({...createFormData, className: e.target.value})}
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">Gaya Belajar</label>
-                                        <div className="relative">
-                                            <BrainCircuit className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                                            <select 
-                                                className="w-full pl-10 pr-4 py-3 border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 rounded-xl focus:border-red-400 outline-none text-slate-800 dark:text-white font-medium appearance-none"
-                                                value={createFormData.learningStyle}
-                                                onChange={(e) => setCreateFormData({...createFormData, learningStyle: e.target.value as any})}
-                                            >
-                                                <option value={LearningStyle.VISUAL}>Visual (Gambar/Grafik)</option>
-                                                <option value={LearningStyle.AUDITORY}>Auditori (Mendengar/Cerita)</option>
-                                                <option value={LearningStyle.KINESTHETIC}>Kinestetik (Praktek/Aktivitas)</option>
-                                            </select>
+                                )}
+
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">Email</label>
+                                    <input 
+                                        type="email" 
+                                        className="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 rounded-xl focus:border-red-400 outline-none text-slate-800 dark:text-white font-medium"
+                                        placeholder="Email"
+                                        value={createFormData.email}
+                                        onChange={(e) => setCreateFormData({...createFormData, email: e.target.value})}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">Password</label>
+                                    <input 
+                                        type="password" 
+                                        className="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 rounded-xl focus:border-red-400 outline-none text-slate-800 dark:text-white font-medium"
+                                        placeholder="Password"
+                                        value={createFormData.password}
+                                        onChange={(e) => setCreateFormData({...createFormData, password: e.target.value})}
+                                    />
+                                </div>
+
+                                {showCreateModal === 'student' && (
+                                    <>
+                                        <div>
+                                            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">Nama Sekolah</label>
+                                            <input 
+                                                type="text" 
+                                                className="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 rounded-xl focus:border-red-400 outline-none text-slate-800 dark:text-white font-medium"
+                                                placeholder="Nama Sekolah"
+                                                value={createFormData.schoolName}
+                                                onChange={(e) => setCreateFormData({...createFormData, schoolName: e.target.value})}
+                                            />
                                         </div>
-                                    </div>
-                                </>
-                            )}
-                        </div>
+                                        <div>
+                                            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">Kelas</label>
+                                            <input 
+                                                type="text" 
+                                                className="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 rounded-xl focus:border-red-400 outline-none text-slate-800 dark:text-white font-medium"
+                                                placeholder="Kelas (misal: XII IPA 1)"
+                                                value={createFormData.className}
+                                                onChange={(e) => setCreateFormData({...createFormData, className: e.target.value})}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">Gaya Belajar</label>
+                                            <div className="relative">
+                                                <BrainCircuit className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                                <select 
+                                                    className="w-full pl-10 pr-4 py-3 border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 rounded-xl focus:border-red-400 outline-none text-slate-800 dark:text-white font-medium appearance-none"
+                                                    value={createFormData.learningStyle}
+                                                    onChange={(e) => setCreateFormData({...createFormData, learningStyle: e.target.value as any})}
+                                                >
+                                                    <option value={LearningStyle.VISUAL}>Visual (Gambar/Grafik)</option>
+                                                    <option value={LearningStyle.AUDITORY}>Auditori (Mendengar/Cerita)</option>
+                                                    <option value={LearningStyle.KINESTHETIC}>Kinestetik (Praktek/Aktivitas)</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
 
-                        <div className="flex space-x-3 mt-8">
-                            <button 
-                                onClick={() => setShowCreateModal(null)}
-                                className="flex-1 py-3 px-4 border border-slate-300 dark:border-slate-600 rounded-xl text-slate-600 dark:text-slate-300 font-bold hover:bg-stone-50 dark:hover:bg-slate-700 transition-colors"
-                            >
-                                Batal
-                            </button>
-                            <button 
-                                onClick={handleCreateUser}
-                                className="flex-1 py-3 px-4 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 shadow-lg shadow-red-200 dark:shadow-none transition-all"
-                            >
-                                Buat Akun
-                            </button>
+                            <div className="flex space-x-3 mt-8">
+                                <button 
+                                    onClick={() => setShowCreateModal(null)}
+                                    className="flex-1 py-3 px-4 border border-slate-300 dark:border-slate-600 rounded-xl text-slate-600 dark:text-slate-300 font-bold hover:bg-stone-50 dark:hover:bg-slate-700 transition-colors"
+                                >
+                                    Batal
+                                </button>
+                                <button 
+                                    onClick={handleCreateUser}
+                                    className="flex-1 py-3 px-4 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 shadow-lg shadow-red-200 dark:shadow-none transition-all"
+                                >
+                                    Buat Akun
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
-
-            <header className="mb-8 flex flex-col lg:flex-row justify-between items-center gap-4 bg-white/70 dark:bg-slate-800/70 backdrop-blur-md p-6 rounded-[2rem] border border-white dark:border-slate-700 shadow-sm">
-                <div className="w-full lg:w-auto text-center lg:text-left">
-                    <h2 className="text-2xl font-extrabold text-slate-800 dark:text-white flex items-center justify-center lg:justify-start">
-                        <Shield className="w-8 h-8 mr-3 text-red-600 dark:text-red-400 fill-red-100 dark:fill-red-900" />
-                        Panel Admin
-                    </h2>
-                    <p className="text-slate-500 dark:text-slate-400 font-medium">Pusat kendali sistem pendidikan.</p>
-                </div>
-                
-                <div className="flex items-center space-x-4 w-full lg:w-auto justify-center">
-                    <div className="flex space-x-2 bg-white dark:bg-slate-900 p-1.5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-x-auto w-full lg:w-auto justify-center">
-                        {[
-                            { id: 'overview', label: 'Ringkasan', icon: BarChart3 },
-                            { id: 'teachers', label: 'Guru', icon: School },
-                            { id: 'students', label: 'Siswa', icon: GraduationCap },
-                            { id: 'analytics', label: 'Analitik', icon: BookOpen },
-                        ].map(tab => (
-                            <button
-                                key={tab.id}
-                                onClick={() => setActiveTab(tab.id as any)}
-                                className={`flex items-center px-4 py-2.5 rounded-xl text-sm font-bold transition-all whitespace-nowrap flex-shrink-0 ${
-                                    activeTab === tab.id 
-                                    ? 'bg-red-600 text-white shadow-md' 
-                                    : 'text-slate-500 dark:text-slate-400 hover:bg-red-50 dark:hover:bg-slate-800 hover:text-red-600 dark:hover:text-red-300'
-                                }`}
-                            >
-                                <tab.icon className="w-4 h-4 mr-2" />
-                                {tab.label}
-                            </button>
-                        ))}
-                    </div>
-
-                    <ThemeToggle />
-
-                    <button 
-                        onClick={onLogout}
-                        className="bg-red-50 dark:bg-red-900/20 text-red-500 dark:text-red-400 p-3 rounded-xl hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors"
-                        title="Keluar"
-                    >
-                        <LogOut className="w-5 h-5" />
-                    </button>
-                </div>
-            </header>
+                )}
 
             {/* CONTENT: OVERVIEW */}
             {activeTab === 'overview' && (
@@ -489,8 +459,8 @@ export const AdminDashboard: React.FC<Props> = ({ onLogout }) => {
                 <div className="bg-white dark:bg-slate-800 rounded-[2rem] shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
                     <div className="p-6 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50 flex flex-col md:flex-row justify-between items-center gap-4">
                         <h3 className="font-bold text-lg text-slate-800 dark:text-white">Manajemen Guru</h3>
-                        <div className="flex gap-4 w-full md:w-auto">
-                            <div className="relative w-full md:w-72">
+                        <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
+                            <div className="relative w-full sm:w-72">
                                 <Search className="w-4 h-4 absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400" />
                                 <input 
                                     className="w-full pl-10 pr-4 py-3 border-none bg-white dark:bg-slate-900 rounded-xl text-sm focus:ring-2 focus:ring-red-200 dark:focus:ring-red-900 outline-none shadow-sm font-medium text-slate-800 dark:text-slate-200" 
@@ -501,7 +471,7 @@ export const AdminDashboard: React.FC<Props> = ({ onLogout }) => {
                             </div>
                             <button 
                                 onClick={() => setShowCreateModal('teacher')}
-                                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-xl flex items-center font-bold text-sm transition-colors shadow-lg shadow-red-200 dark:shadow-none whitespace-nowrap"
+                                className="bg-red-600 hover:bg-red-700 text-white px-4 py-3 sm:py-2 rounded-xl flex justify-center items-center font-bold text-sm transition-colors shadow-lg shadow-red-200 dark:shadow-none whitespace-nowrap w-full sm:w-auto"
                             >
                                 <Plus className="w-4 h-4 mr-2" /> Tambah Guru
                             </button>
@@ -548,8 +518,8 @@ export const AdminDashboard: React.FC<Props> = ({ onLogout }) => {
                 <div className="bg-white dark:bg-slate-800 rounded-[2rem] shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
                     <div className="p-6 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50 flex flex-col md:flex-row justify-between items-center gap-4">
                         <h3 className="font-bold text-lg text-slate-800 dark:text-white">Manajemen Siswa</h3>
-                        <div className="flex gap-4 w-full md:w-auto">
-                            <div className="relative w-full md:w-72">
+                        <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
+                            <div className="relative w-full sm:w-72">
                                 <Search className="w-4 h-4 absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400" />
                                 <input 
                                     className="w-full pl-10 pr-4 py-3 border-none bg-white dark:bg-slate-900 rounded-xl text-sm focus:ring-2 focus:ring-red-200 dark:focus:ring-red-900 outline-none shadow-sm font-medium text-slate-800 dark:text-slate-200" 
@@ -560,7 +530,7 @@ export const AdminDashboard: React.FC<Props> = ({ onLogout }) => {
                             </div>
                             <button 
                                 onClick={() => setShowCreateModal('student')}
-                                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-xl flex items-center font-bold text-sm transition-colors shadow-lg shadow-red-200 dark:shadow-none whitespace-nowrap"
+                                className="bg-red-600 hover:bg-red-700 text-white px-4 py-3 sm:py-2 rounded-xl flex justify-center items-center font-bold text-sm transition-colors shadow-lg shadow-red-200 dark:shadow-none whitespace-nowrap w-full sm:w-auto"
                             >
                                 <Plus className="w-4 h-4 mr-2" /> Tambah Siswa
                             </button>
@@ -628,6 +598,7 @@ export const AdminDashboard: React.FC<Props> = ({ onLogout }) => {
                     </div>
                 </div>
             )}
-        </div>
+            </div>
+        </DashboardLayout>
     );
 };

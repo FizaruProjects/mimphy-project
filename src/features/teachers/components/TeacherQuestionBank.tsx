@@ -183,7 +183,7 @@ export const TeacherQuestionBank: React.FC<Props> = ({ questions, onRefresh, tea
         </h3>
         
         <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-medium text-stone-500 dark:text-slate-400 mb-1">Topik</label>
                 <input 
@@ -319,7 +319,7 @@ export const TeacherQuestionBank: React.FC<Props> = ({ questions, onRefresh, tea
 
       <div className="space-y-4">
          <h3 className="font-semibold text-lg text-stone-700 dark:text-slate-200">Daftar Soal Tersimpan ({questions.length})</h3>
-         <div className="h-[600px] overflow-y-auto space-y-3 pr-2 scrollbar-thin scrollbar-thumb-stone-300 dark:scrollbar-thumb-slate-600">
+         <div className="h-[400px] md:h-[600px] overflow-y-auto space-y-3 pr-2 scrollbar-thin scrollbar-thumb-stone-300 dark:scrollbar-thumb-slate-600">
             {questions.length === 0 && <p className="text-stone-400 dark:text-slate-500 text-center py-10">Belum ada soal tersimpan.</p>}
             {questions.map(q => (
                 <div key={q.id} className={`bg-white dark:bg-slate-800 p-4 rounded-lg border shadow-sm transition-colors relative group ${editingId === q.id ? 'border-orange-500 ring-1 ring-orange-500 bg-orange-50 dark:bg-orange-900/20' : 'border-stone-200 dark:border-slate-700 hover:border-red-300 dark:hover:border-red-500'}`}>

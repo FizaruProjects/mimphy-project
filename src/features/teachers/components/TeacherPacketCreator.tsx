@@ -198,7 +198,7 @@ export const TeacherPacketCreator: React.FC<Props> = ({ questions, packets, onRe
             {/* Differentiation Mode Selector */}
             <div className="mb-6 pb-6 border-b border-stone-100 dark:border-slate-700">
                 <label className="block text-xs font-medium text-stone-500 dark:text-slate-400 mb-2">Mode Diferensiasi (Untuk Modul Pasca-Kuis)</label>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <button 
                         onClick={() => { setDiffMode(DifferentiationMode.CONTENT); setModCategory('basic'); }}
                         className={`p-3 rounded-lg border-2 text-left flex flex-col transition-all ${diffMode === DifferentiationMode.CONTENT ? 'border-red-500 bg-red-50 dark:bg-red-900/30' : 'border-stone-200 dark:border-slate-600 hover:bg-stone-50 dark:hover:bg-slate-700'}`}
@@ -312,7 +312,7 @@ export const TeacherPacketCreator: React.FC<Props> = ({ questions, packets, onRe
 
         <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-stone-200 dark:border-slate-700 transition-colors">
             <h3 className="font-semibold text-lg mb-4 text-stone-800 dark:text-white">Pilih Soal untuk Paket</h3>
-            <div className="h-[600px] overflow-y-auto space-y-2 scrollbar-thin scrollbar-thumb-stone-300 dark:scrollbar-thumb-slate-600">
+            <div className="h-[400px] md:h-[600px] overflow-y-auto space-y-2 scrollbar-thin scrollbar-thumb-stone-300 dark:scrollbar-thumb-slate-600">
                 {questions.map(q => (
                     <div 
                         key={q.id} 

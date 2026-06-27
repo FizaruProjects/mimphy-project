@@ -203,7 +203,7 @@ export const TeacherResults: React.FC<Props> = ({ results, packets }) => {
 
                 {/* Filter Kelas */}
                 <select 
-                    className="p-2 border dark:border-slate-600 rounded-lg text-sm min-w-[150px] outline-none focus:ring-2 focus:ring-red-100 bg-white dark:bg-slate-900 text-stone-800 dark:text-white"
+                    className="p-2 border dark:border-slate-600 rounded-lg text-sm w-full md:w-auto min-w-[150px] outline-none focus:ring-2 focus:ring-red-100 bg-white dark:bg-slate-900 text-stone-800 dark:text-white"
                     value={filterClass}
                     onChange={(e) => setFilterClass(e.target.value)}
                 >
@@ -215,7 +215,7 @@ export const TeacherResults: React.FC<Props> = ({ results, packets }) => {
 
                 {/* Filter Paket Soal */}
                 <select 
-                    className="p-2 border dark:border-slate-600 rounded-lg text-sm min-w-[200px] outline-none focus:ring-2 focus:ring-red-100 bg-white dark:bg-slate-900 text-stone-800 dark:text-white"
+                    className="p-2 border dark:border-slate-600 rounded-lg text-sm w-full md:w-auto min-w-[200px] outline-none focus:ring-2 focus:ring-red-100 bg-white dark:bg-slate-900 text-stone-800 dark:text-white"
                     value={filterPacket}
                     onChange={(e) => setFilterPacket(e.target.value)}
                 >
@@ -230,7 +230,7 @@ export const TeacherResults: React.FC<Props> = ({ results, packets }) => {
                 {/* EXPORT BUTTON */}
                 <button 
                     onClick={() => setShowExportModal(true)}
-                    className="flex items-center px-4 py-2 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-900/50 rounded-lg text-sm font-bold transition-colors border border-green-200 dark:border-green-800"
+                    className="flex items-center justify-center w-full md:w-auto px-4 py-2 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-900/50 rounded-lg text-sm font-bold transition-colors border border-green-200 dark:border-green-800"
                 >
                     <FileSpreadsheet className="w-4 h-4 mr-2" /> Export Excel
                 </button>
@@ -287,7 +287,7 @@ export const TeacherResults: React.FC<Props> = ({ results, packets }) => {
 
         {/* Groups Toggle & Display */}
         <div className="space-y-4">
-            <div className="flex flex-col md:flex-row justify-between items-end md:items-center gap-4">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
                     <h3 className="font-bold text-xl text-stone-800 dark:text-white flex items-center">
                         <Users className="w-6 h-6 mr-2 text-red-600" />

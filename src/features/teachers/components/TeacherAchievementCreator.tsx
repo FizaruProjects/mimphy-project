@@ -113,7 +113,7 @@ export const TeacherAchievementCreator: React.FC<Props> = ({ onRefresh }) => {
                         />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1">Tipe Kriteria</label>
                             <select 
@@ -160,7 +160,7 @@ export const TeacherAchievementCreator: React.FC<Props> = ({ onRefresh }) => {
             {/* LIST */}
             <div className="space-y-4">
                 <h3 className="font-semibold text-lg text-slate-700 dark:text-slate-200">Daftar Achievement Aktif</h3>
-                <div className="space-y-3 max-h-[500px] overflow-y-auto scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-600">
+                <div className="space-y-3 max-h-[400px] md:max-h-[500px] overflow-y-auto scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-600">
                     {achievements.length === 0 && <p className="text-slate-400 dark:text-slate-500 italic text-center py-10">Belum ada achievement.</p>}
                     {achievements.map(ach => (
                         <div key={ach.id} className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center gap-4 transition-colors">

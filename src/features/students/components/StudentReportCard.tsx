@@ -165,7 +165,7 @@ export const StudentReportCard: React.FC<Props> = ({ studentId, onBack, isTeache
                 </div>
 
                 {/* Student Info */}
-                <div className="grid grid-cols-2 gap-6 mb-10 bg-stone-50 dark:bg-slate-700/30 p-6 rounded-2xl border border-stone-100 dark:border-slate-600 print:bg-transparent print:border-stone-300">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-10 bg-stone-50 dark:bg-slate-700/30 p-6 rounded-2xl border border-stone-100 dark:border-slate-600 print:bg-transparent print:border-stone-300">
                     <div>
                         <p className="text-xs font-bold text-stone-400 dark:text-slate-500 uppercase tracking-wider mb-1">Nama Siswa</p>
                         <p className="text-lg font-bold text-stone-800 dark:text-white flex items-center">
@@ -217,8 +217,8 @@ export const StudentReportCard: React.FC<Props> = ({ studentId, onBack, isTeache
                                                     const isMastered = percentage >= 70;
                                                     
                                                     return (
-                                                        <div key={indicator} className="flex items-center justify-between bg-white dark:bg-slate-800 p-4 rounded-lg border border-stone-200 dark:border-slate-600 shadow-sm print:shadow-none print:border-stone-300">
-                                                            <div className="flex-1 mr-6">
+                                                        <div key={indicator} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white dark:bg-slate-800 p-4 rounded-lg border border-stone-200 dark:border-slate-600 shadow-sm print:shadow-none print:border-stone-300">
+                                                            <div className="flex-1 w-full sm:mr-6">
                                                                 <p className="text-sm font-bold text-stone-700 dark:text-slate-300 mb-2">{indicator}</p>
                                                                 <div className="w-full bg-stone-200 dark:bg-slate-700 h-2 rounded-full overflow-hidden print:border print:border-stone-300">
                                                                     <div className={`h-full rounded-full ${isMastered ? 'bg-green-500' : 'bg-orange-500'} print:bg-black`} style={{ width: `${percentage}%` }}></div>
@@ -253,7 +253,7 @@ export const StudentReportCard: React.FC<Props> = ({ studentId, onBack, isTeache
                         <h3 className="font-bold text-lg text-stone-800 dark:text-white mb-4 flex items-center border-b border-stone-200 dark:border-slate-600 pb-2">
                             <Award className="w-5 h-5 mr-2 text-stone-400" /> Prestasi Diraih
                         </h3>
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             {studentAchievements.map(ach => (
                                 <div key={ach.id} className="flex items-center bg-stone-50 dark:bg-slate-700/30 p-3 rounded-lg border border-stone-100 dark:border-slate-600 print:bg-transparent print:border-stone-200">
                                     <div className="w-10 h-10 rounded-full bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center mr-3 print:border print:border-stone-300">

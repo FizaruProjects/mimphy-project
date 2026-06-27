@@ -8,6 +8,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { DashboardLayout } from '@/layouts/DashboardLayout';
 import { ContributionGraph } from '@/components/ContributionGraph';
 import { StudentReportCard } from '@/features/students/components/StudentReportCard';
 
@@ -367,71 +368,29 @@ export const StudentDashboard: React.FC<Props> = ({ session, onLogout }) => {
   };
 
   // ... (Header and CopyrightFooter remain the same) ...
-  const DashboardHeader = () => (
-      <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-stone-200/50 dark:border-slate-700 px-4 md:px-6 py-4 flex justify-between items-center sticky top-0 z-40 shadow-sm transition-colors duration-300">
-           {/* ... Header Content ... */}
-           <div className="flex items-center space-x-3">
-              <div className="relative group cursor-pointer" onClick={() => setView('profile')}>
-                  <div className="w-10 h-10 rounded-full overflow-hidden border border-red-200 dark:border-slate-600 bg-red-100 dark:bg-slate-700 flex items-center justify-center transition-transform hover:scale-105">
-                    {currentPhoto ? <img src={currentPhoto} alt="Profile" className="w-full h-full object-cover" /> : <UserCircle className="w-6 h-6 text-red-600 dark:text-red-300" />}
-                  </div>
-              </div>
-              <div className="hidden md:block">
-                  <h3 className="font-bold text-stone-800 dark:text-white leading-tight">{session.name}</h3>
-                  <div className="flex items-center gap-2">
-                     <p className="text-xs text-red-600 dark:text-red-300 font-bold bg-red-50 dark:bg-red-900/50 px-2 py-0.5 rounded-full inline-block">{session.className}</p>
-                     <p className="text-[10px] text-orange-700 dark:text-orange-400 font-bold bg-orange-100 dark:bg-orange-900/50 px-2 py-0.5 rounded-full inline-block">{currentStyle}</p>
-                  </div>
-              </div>
-          </div>
-          
-          <div className="hidden md:flex items-center space-x-2">
-            <ThemeToggle />
-            {view !== 'dashboard' && (
-                <button onClick={goHome} className="text-stone-500 dark:text-slate-300 hover:text-red-600 p-2 rounded-full hover:bg-red-50 dark:hover:bg-slate-700 transition-all hover:scale-110" title="Kembali ke Dashboard">
-                    <Home className="w-5 h-5" />
-                </button>
-            )}
-            <button onClick={() => setView('rapor')} className="flex items-center gap-2 bg-white dark:bg-slate-800 border border-stone-200 dark:border-slate-600 px-3 py-1.5 rounded-full hover:bg-stone-50 dark:hover:bg-slate-700 transition-colors shadow-sm">
-                <Award className="w-4 h-4 text-orange-500" />
-                <span className="text-xs font-bold text-stone-700 dark:text-slate-300">Rapor</span>
-            </button>
-            <button onClick={handleLogoutClick} className="flex items-center space-x-2 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 px-4 py-2 rounded-xl font-bold transition-all border border-red-200 dark:border-red-800 shadow-sm hover:shadow-md hover:-translate-y-0.5 active:scale-95"><LogOut className="w-4 h-4" /><span>Logout</span></button>
-          </div>
-          {/* Mobile Menu Button & Dropdown omitted for brevity but should be here */}
-          <div className="md:hidden flex items-center gap-2">
-            <ThemeToggle />
-            <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-2 text-stone-600 dark:text-slate-200">
-                {isMobileMenuOpen ? <X /> : <Menu />}
-            </button>
-          </div>
-          {isMobileMenuOpen && (
-              <div className="absolute top-full left-0 right-0 bg-white dark:bg-slate-800 border-b border-stone-200 dark:border-slate-700 p-4 shadow-lg flex flex-col gap-4 md:hidden animate-in slide-in-from-top-2 z-50">
-                  <div className="flex items-center gap-3 pb-3 border-b border-stone-100 dark:border-slate-700">
-                      <div><p className="font-bold text-stone-800 dark:text-white">{session.name}</p><p className="text-xs text-stone-500 dark:text-slate-400">{session.className}</p></div>
-                  </div>
-                  {view !== 'dashboard' && <button onClick={goHome} className="flex items-center gap-3 p-3 rounded-lg hover:bg-stone-50 dark:hover:bg-slate-700 text-stone-700 dark:text-slate-200"><Home className="w-5 h-5" /> Dashboard Utama</button>}
-                  <button onClick={() => { setView('rapor'); setIsMobileMenuOpen(false); }} className="flex items-center gap-3 p-3 rounded-lg hover:bg-stone-50 dark:hover:bg-slate-700 text-stone-700 dark:text-slate-200"><Award className="w-5 h-5" /> Rapor Saya</button>
-                  <button onClick={() => { setView('profile'); setIsMobileMenuOpen(false); }} className="flex items-center gap-3 p-3 rounded-lg hover:bg-stone-50 dark:hover:bg-slate-700 text-stone-700 dark:text-slate-200"><UserCircle className="w-5 h-5" /> Profil Saya</button>
-                  <button onClick={handleLogoutClick} className="flex items-center gap-3 p-3 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400"><LogOut className="w-5 h-5" /> Logout</button>
-              </div>
-          )}
-      </div>
-  );
 
-  const CopyrightFooter = () => (
-    <div className="text-center py-6 mt-4 border-t border-stone-200/50 dark:border-slate-700/50">
-        <p className="text-xs font-semibold text-stone-400 dark:text-slate-500 tracking-wide">&copy; {new Date().getFullYear()} Mimphy Catalyze. All Rights Reserved.</p>
-    </div>
-  );
 
   // ... (View 1: Dashboard, View 2: Input Code, View 2.5: Study Materials - Keep existing logic, only adding RenderPreviewModal)
 
-  // 1. DASHBOARD HOME (Same as before)
+
+  const tabs = [
+    { id: 'dashboard', label: 'Dashboard', icon: Home },
+    { id: 'input_code', label: 'Mulai Kuis', icon: Play },
+    { id: 'rapor', label: 'Rapor', icon: Award },
+    { id: 'profile', label: 'Profil', icon: UserCircle }
+  ];
+
+  // 1. DASHBOARD HOME
   if (view === 'dashboard') {
       return (
-          <div className="min-h-screen pb-10 flex flex-col bg-stone-50 dark:bg-slate-900 transition-colors duration-300">
-              <DashboardHeader />
+          <DashboardLayout
+        session={session}
+        onLogout={onLogout}
+        activeTab={view}
+        setActiveTab={(id) => setView(id as any)}
+        brandName="Mimphy Siswa"
+        tabs={tabs}
+    >
               <div className="max-w-6xl mx-auto p-4 md:p-6 space-y-8 animate-in fade-in slide-in-from-bottom-4 flex-1 w-full">
                   {/* ... Stats & Achievement content ... */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
@@ -477,16 +436,21 @@ export const StudentDashboard: React.FC<Props> = ({ session, onLogout }) => {
                       </div>
                   </div>
               </div>
-              <CopyrightFooter />
-          </div>
+              </DashboardLayout>
       );
   }
 
   // 2. INPUT CODE (Same)
   if (view === 'input_code') {
     return (
-        <div className="min-h-screen flex flex-col bg-stone-50 dark:bg-slate-900 transition-colors duration-300">
-            <DashboardHeader />
+        <DashboardLayout
+        session={session}
+        onLogout={onLogout}
+        activeTab={view}
+        setActiveTab={(id) => setView(id as any)}
+        brandName="Mimphy Siswa"
+        tabs={tabs}
+    >
             <div className="flex-1 flex items-center justify-center p-4">
                 <div className="max-w-md w-full bg-white/80 dark:bg-slate-800/80 backdrop-blur-lg rounded-[2rem] shadow-[0_10px_40px_-10px_rgba(220,38,38,0.3)] dark:shadow-none dark:border dark:border-slate-700 text-center relative overflow-hidden p-8 animate-in zoom-in-95">
                     <button onClick={goHome} className="absolute top-4 left-4 text-stone-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"><ChevronLeft/></button>
@@ -503,16 +467,21 @@ export const StudentDashboard: React.FC<Props> = ({ session, onLogout }) => {
                     </div>
                 </div>
             </div>
-            <CopyrightFooter />
-        </div>
+            </DashboardLayout>
     );
   }
 
   // 2.5 STUDY MATERIALS (Pra Kuis)
   if (view === 'study_materials' && activePacket) {
       return (
-          <div className="min-h-screen pb-10 flex flex-col bg-stone-50 dark:bg-slate-900 transition-colors duration-300">
-              <DashboardHeader />
+          <DashboardLayout
+        session={session}
+        onLogout={onLogout}
+        activeTab={view}
+        setActiveTab={(id) => setView(id as any)}
+        brandName="Mimphy Siswa"
+        tabs={tabs}
+    >
               <div className="max-w-4xl mx-auto p-4 md:p-6 w-full flex-1">
                   <div className="flex items-center justify-between mb-6">
                       <button onClick={goHome} className="text-stone-500 dark:text-slate-400 hover:text-red-600 flex items-center font-bold text-sm"><ChevronLeft className="w-4 h-4 mr-1"/> Batal</button>
@@ -547,7 +516,7 @@ export const StudentDashboard: React.FC<Props> = ({ session, onLogout }) => {
                       <button onClick={proceedToQuiz} className="w-full md:w-auto px-12 py-4 bg-gradient-to-r from-yellow-400 to-orange-500 text-white font-extrabold text-xl rounded-2xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all flex items-center justify-center">Siap Mengerjakan Kuis <ArrowRight className="w-6 h-6 ml-2"/></button>
                   </div>
               </div>
-          </div>
+          </DashboardLayout>
       );
   }
 
@@ -556,8 +525,14 @@ export const StudentDashboard: React.FC<Props> = ({ session, onLogout }) => {
     const question = activePacket.questions[currentQIndex];
     const progress = ((currentQIndex + 1) / activePacket.questions.length) * 100;
     return (
-        <div className="min-h-screen pb-10 flex flex-col bg-stone-50 dark:bg-slate-900 transition-colors duration-300 relative">
-            <DashboardHeader />
+        <DashboardLayout
+        session={session}
+        onLogout={onLogout}
+        activeTab={view}
+        setActiveTab={(id) => setView(id as any)}
+        brandName="Mimphy Siswa"
+        tabs={tabs}
+    >
             {/* ... Quiz UI ... (Omitted specific repetitive JSX, assume same as before) */}
             <div className="max-w-6xl mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-4 gap-6 flex-1 w-full mb-16 lg:mb-0">
                 <div className="lg:col-span-3">
@@ -596,16 +571,21 @@ export const StudentDashboard: React.FC<Props> = ({ session, onLogout }) => {
                 </div>
             </div>
             {/* Mobile Sheet Code ... (Omitted) */}
-            <CopyrightFooter />
-        </div>
+            </DashboardLayout>
     );
   }
 
   // 4. RESULT SCREEN WITH MULTI-FORMAT MODULES
   if (view === 'result') {
     return (
-        <div className="min-h-screen flex flex-col bg-stone-50 dark:bg-slate-900 transition-colors duration-300">
-            <DashboardHeader />
+        <DashboardLayout
+        session={session}
+        onLogout={onLogout}
+        activeTab={view}
+        setActiveTab={(id) => setView(id as any)}
+        brandName="Mimphy Siswa"
+        tabs={tabs}
+    >
             <div className="max-w-4xl mx-auto mt-6 md:mt-10 p-6 space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-500 pb-20 flex-1 w-full">
                 
                 {/* Result Card ... */}
@@ -673,16 +653,21 @@ export const StudentDashboard: React.FC<Props> = ({ session, onLogout }) => {
                 {renderPreviewModal()}
                 <button onClick={goHome} className="w-full py-4 text-red-400 hover:text-red-600 dark:hover:text-red-300 transition-colors font-bold flex items-center justify-center bg-white/50 dark:bg-slate-800/50 rounded-2xl hover:bg-white dark:hover:bg-slate-800 active:scale-95"><ChevronLeft className="w-5 h-5 mr-1" /> Kembali ke Menu Utama</button>
             </div>
-            <CopyrightFooter />
-        </div>
+            </DashboardLayout>
     );
   }
 
   // 5. PROFILE
   if (view === 'profile') {
       return (
-          <div className="min-h-screen flex flex-col bg-stone-50 dark:bg-slate-900 transition-colors duration-300">
-              <DashboardHeader />
+          <DashboardLayout
+        session={session}
+        onLogout={onLogout}
+        activeTab={view}
+        setActiveTab={(id) => setView(id as any)}
+        brandName="Mimphy Siswa"
+        tabs={tabs}
+    >
               <div className="max-w-2xl mx-auto p-6 w-full flex-1">
                   <div className="bg-white dark:bg-slate-800 rounded-[2rem] p-8 shadow-sm border border-stone-200 dark:border-slate-700">
                       <button onClick={goHome} className="mb-6 text-stone-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 flex items-center font-bold text-sm"><ChevronLeft className="w-4 h-4 mr-1"/> Kembali</button>
@@ -759,24 +744,28 @@ export const StudentDashboard: React.FC<Props> = ({ session, onLogout }) => {
                       </div>
                   </div>
               </div>
-              <CopyrightFooter />
-          </div>
+              </DashboardLayout>
       );
   }
 
   // 6. RAPOR VIEW (NEW)
   if (view === 'rapor') {
       return (
-          <div className="min-h-screen flex flex-col bg-stone-50 dark:bg-slate-900 transition-colors duration-300">
-              <DashboardHeader />
+          <DashboardLayout
+        session={session}
+        onLogout={onLogout}
+        activeTab={view}
+        setActiveTab={(id) => setView(id as any)}
+        brandName="Mimphy Siswa"
+        tabs={tabs}
+    >
               <div className="w-full flex-1">
                   <StudentReportCard 
                       studentId={session.userId!} 
                       onBack={goHome}
                   />
               </div>
-              <CopyrightFooter />
-          </div>
+              </DashboardLayout>
       );
   }
 

@@ -244,8 +244,8 @@ export const TeacherPacketManager: React.FC<Props> = ({ packets, onRefresh }) =>
                 <div className="space-y-8">
                     {editData.questions.map((q, idx) => (
                         <div key={idx} className="bg-slate-50 dark:bg-slate-700/30 p-6 rounded-2xl border border-slate-200 dark:border-slate-600 relative group transition-all hover:shadow-md hover:border-purple-200 dark:hover:border-purple-700">
-                            <div className="absolute top-4 right-4 flex gap-1 opacity-50 group-hover:opacity-100 transition-opacity">
-                                <button onClick={() => moveQuestion(idx, 'up')} disabled={idx === 0} className="p-1 bg-white dark:bg-slate-800 border dark:border-slate-600 rounded hover:bg-purple-50 dark:hover:bg-purple-900/30 hover:text-purple-600 dark:hover:text-purple-300 disabled:opacity-30"><ArrowUp className="w-4 h-4"/></button>
+                            <div className="absolute top-4 right-4 flex gap-1 opacity-100 sm:opacity-50 sm:group-hover:opacity-100 transition-opacity">
+                                <button onClick={() => moveQuestion(idx, 'up')} disabled={idx === 0} className="p-2 sm:p-1 bg-white dark:bg-slate-800 border dark:border-slate-600 rounded hover:bg-purple-50 dark:hover:bg-purple-900/30 hover:text-purple-600 dark:hover:text-purple-300 disabled:opacity-30"><ArrowUp className="w-4 h-4"/></button>
                                 <button onClick={() => moveQuestion(idx, 'down')} disabled={idx === editData.questions.length - 1} className="p-1 bg-white dark:bg-slate-800 border dark:border-slate-600 rounded hover:bg-purple-50 dark:hover:bg-purple-900/30 hover:text-purple-600 dark:hover:text-purple-300 disabled:opacity-30"><ArrowDown className="w-4 h-4"/></button>
                                 <button onClick={() => removeQuestion(idx)} className="p-1 bg-white dark:bg-slate-800 border dark:border-slate-600 rounded hover:bg-red-50 dark:hover:bg-red-900/30 hover:text-red-600 dark:hover:text-red-400 ml-2"><Trash2 className="w-4 h-4"/></button>
                             </div>

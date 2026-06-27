@@ -124,16 +124,16 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
         </div>
 
         <div className="md:w-7/12 p-8 md:p-14 bg-white/50 dark:bg-slate-800 relative flex flex-col justify-center transition-colors duration-300">
-            {authMode !== 'selection' && (
-                <button 
-                    onClick={() => { setAuthMode('selection'); clearForms(); }} 
-                    className="absolute top-6 left-6 md:top-8 md:left-8 text-red-600 dark:text-red-400 font-bold bg-red-50 dark:bg-slate-700 px-4 py-2 rounded-full text-sm hover:bg-red-100 dark:hover:bg-slate-600 transition-all hover:-translate-x-1"
-                >
-                    &larr; Kembali
-                </button>
-            )}
-
             <div className="w-full max-w-md mx-auto">
+                {authMode !== 'selection' && (
+                    <button 
+                        onClick={() => { setAuthMode('selection'); clearForms(); }} 
+                        className="mb-8 md:mb-0 md:absolute md:top-8 md:left-8 text-red-600 dark:text-red-400 font-bold bg-red-50 dark:bg-slate-700 px-4 py-2 rounded-full text-sm hover:bg-red-100 dark:hover:bg-slate-600 transition-all hover:-translate-x-1 inline-flex items-center"
+                    >
+                        &larr; Kembali
+                    </button>
+                )}
+
                 {authMode === 'selection' ? (
                     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                         <h2 className="text-3xl font-extrabold text-stone-800 dark:text-white text-center mb-8">Pilih Peran</h2>
