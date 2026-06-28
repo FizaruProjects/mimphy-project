@@ -2,8 +2,15 @@
 <html lang="id">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="icon" type="image/png" href="/logo.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#dc2626" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Mimphy" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="alternate icon" href="/favicon.ico" />
+    <link rel="mask-icon" href="/favicon.svg" color="#dc2626" />
     <title>Mimphy Catalyze</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -21,7 +28,11 @@
     <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous">
     <style>
-      body { font-family: 'Quicksand', sans-serif; }
+      body { 
+        font-family: 'Quicksand', sans-serif; 
+        overscroll-behavior-y: none; /* Prevent pull-to-refresh and bounce */
+        -webkit-tap-highlight-color: transparent; /* Remove tap highlight on iOS */
+      }
       .glass {
         background: rgba(255, 255, 255, 0.7);
         backdrop-filter: blur(12px);

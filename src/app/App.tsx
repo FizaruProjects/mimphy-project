@@ -8,6 +8,9 @@ import { MainLayout } from '@/layouts/MainLayout';
 import { ProtectedRoute } from '@/layouts/ProtectedRoute';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { SkeletonLoader } from '@/components/SkeletonLoader';
+import { PWAInstallManager } from '@/components/pwa/PWAInstallManager';
+import { ReloadPrompt } from '@/components/pwa/ReloadPrompt';
+import { OfflineIndicator } from '@/components/pwa/OfflineIndicator';
 
 const TeacherDashboard = React.lazy(() => import('@/features/teachers/components/TeacherDashboard').then(m => ({ default: m.TeacherDashboard })));
 const StudentDashboard = React.lazy(() => import('@/features/students/components/StudentDashboard').then(m => ({ default: m.StudentDashboard })));
@@ -117,6 +120,9 @@ const App: React.FC = () => (
   <ErrorBoundary>
     <ThemeProvider>
       <MainApp />
+      <PWAInstallManager />
+      <ReloadPrompt />
+      <OfflineIndicator />
     </ThemeProvider>
   </ErrorBoundary>
 );
