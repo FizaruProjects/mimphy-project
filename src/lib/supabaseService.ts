@@ -1,20 +1,12 @@
-
 import { supabase } from './supabaseClient';
 import { Question, QuizPacket, StudentResult, TeacherProfile, StudentProfile, Achievement, LearningStyle, DifferentiationMode, Difficulty, AchievementType } from '@/types';
 
-// This service mirrors StorageService but uses Supabase (Async)
-
 function parseTimestamp(val: any): number {
     if (!val) return Date.now();
-    // If it's already a number
     if (typeof val === 'number') {
-        // If it's extremely small, it might be seconds instead of milliseconds.
-        // E.g. anything before 1971 in ms is < 31536000000. 
-        // 1772985980 is year 2026 in seconds, 1772985980000 in ms.
         if (val < 100000000000) return val * 1000; 
         return val;
     }
-    // If it's a string
     if (typeof val === 'string') {
         const num = Number(val);
         if (!isNaN(num)) {
@@ -23,33 +15,102 @@ function parseTimestamp(val: any): number {
         }
         return new Date(val).getTime();
     }
-    // Fallback
     return new Date(val).getTime();
 }
+
+// --- CACHE MANAGER ---
+interface CacheItem<T> {
+  data: T;
+  timestamp: number;
+}
+
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+class CacheManager {
+  private cache = new Map<string, CacheItem<any>>();
+  private pending = new Map<string, Promise<any>>();
+
+  async fetch<T>(
+    key: string,
+    fetcher: () => Promise<T>,
+    forceRefresh: boolean = false
+  ): Promise<T> {
+    const now = Date.now();
+    const cached = this.cache.get(key);
+
+    if (cached && !forceRefresh) {
+      const isStale = now - cached.timestamp > CACHE_TTL;
+      
+      if (isStale) {
+        // Stale-While-Revalidate
+        this.executeFetch(key, fetcher).catch(console.error);
+      }
+      
+      return cached.data;
+    }
+
+    return this.executeFetch(key, fetcher);
+  }
+
+  private async executeFetch<T>(key: string, fetcher: () => Promise<T>): Promise<T> {
+    if (this.pending.has(key)) {
+      return this.pending.get(key) as Promise<T>;
+    }
+
+    const promise = fetcher().then((data) => {
+      this.cache.set(key, { data, timestamp: Date.now() });
+      this.pending.delete(key);
+      return data;
+    }).catch((error) => {
+      this.pending.delete(key);
+      throw error;
+    });
+
+    this.pending.set(key, promise);
+    return promise;
+  }
+
+  invalidate(pattern: RegExp | string) {
+    if (typeof pattern === 'string') {
+       this.cache.delete(pattern);
+       return;
+    }
+    for (const key of this.cache.keys()) {
+      if (pattern.test(key)) {
+        this.cache.delete(key);
+      }
+    }
+  }
+}
+
+const cache = new CacheManager();
 
 export const SupabaseService = {
   // --- QUESTIONS ---
   getQuestions: async (teacherId?: string): Promise<Question[]> => {
-    let query = supabase.from('questions').select('*');
-    if (teacherId) query = query.eq('teacher_id', teacherId);
+    const cacheKey = teacherId ? `questions_${teacherId}` : 'questions_all';
     
-    const { data, error } = await query;
-    if (error) throw error;
-    
-    // Map snake_case to camelCase if needed, or adjust types
-    return data.map((q: any) => ({
-        id: q.id,
-        teacherId: q.teacher_id,
-        topic: q.topic,
-        indicator: q.indicator,
-        difficulty: q.difficulty as Difficulty,
-        text: q.text,
-        imageUrl: q.image_url,
-        options: q.options,
-        correctIndex: q.correct_index,
-        explanation: q.explanation,
-        createdAt: parseTimestamp(q.created_at)
-    }));
+    return cache.fetch(cacheKey, async () => {
+        let query = supabase.from('questions').select('*');
+        if (teacherId) query = query.eq('teacher_id', teacherId);
+        
+        const { data, error } = await query;
+        if (error) throw error;
+        
+        return data.map((q: any) => ({
+            id: q.id,
+            teacherId: q.teacher_id,
+            topic: q.topic,
+            indicator: q.indicator,
+            difficulty: q.difficulty as Difficulty,
+            text: q.text,
+            imageUrl: q.image_url,
+            options: q.options,
+            correctIndex: q.correct_index,
+            explanation: q.explanation,
+            createdAt: parseTimestamp(q.created_at)
+        }));
+    });
   },
 
   saveQuestion: async (question: Question) => {
@@ -64,51 +125,60 @@ export const SupabaseService = {
         options: question.options,
         correct_index: question.correctIndex,
         explanation: question.explanation,
-        created_at: question.createdAt || Date.now() // Send number, not string
+        created_at: question.createdAt || Date.now()
     });
     if (error) throw error;
+    cache.invalidate(/questions/);
   },
 
   deleteQuestion: async (id: string) => {
     const { error } = await supabase.from('questions').delete().eq('id', id);
     if (error) throw error;
+    cache.invalidate(/questions/);
   },
 
   // --- PACKETS ---
   getPackets: async (teacherId?: string): Promise<QuizPacket[]> => {
-    let query = supabase.from('packets').select('*');
-    if (teacherId) query = query.eq('teacher_id', teacherId);
+    const cacheKey = teacherId ? `packets_${teacherId}` : 'packets_all';
     
-    const { data, error } = await query;
-    if (error) throw error;
+    return cache.fetch(cacheKey, async () => {
+        let query = supabase.from('packets').select('*');
+        if (teacherId) query = query.eq('teacher_id', teacherId);
+        
+        const { data, error } = await query;
+        if (error) throw error;
 
-    return data.map((p: any) => ({
-        id: p.id,
-        teacherId: p.teacher_id,
-        name: p.name,
-        questions: p.questions, // JSONB
-        modules: p.modules, // JSONB
-        learningMaterials: p.learning_materials, // JSONB
-        createdAt: parseTimestamp(p.created_at),
-        differentiationMode: p.differentiation_mode as DifferentiationMode
-    }));
+        return data.map((p: any) => ({
+            id: p.id,
+            teacherId: p.teacher_id,
+            name: p.name,
+            questions: p.questions,
+            modules: p.modules,
+            learningMaterials: p.learning_materials,
+            createdAt: parseTimestamp(p.created_at),
+            differentiationMode: p.differentiation_mode as DifferentiationMode
+        }));
+    });
   },
 
   getPacketById: async (id: string): Promise<QuizPacket | null> => {
-    const { data, error } = await supabase.from('packets').select('*').eq('id', id).single();
-    if (error) return null;
-    if (!data) return null;
+    const cacheKey = `packet_${id}`;
+    
+    return cache.fetch(cacheKey, async () => {
+        const { data, error } = await supabase.from('packets').select('*').eq('id', id).single();
+        if (error || !data) return null;
 
-    return {
-        id: data.id,
-        teacherId: data.teacher_id,
-        name: data.name,
-        questions: data.questions,
-        modules: data.modules,
-        learningMaterials: data.learning_materials,
-        createdAt: parseTimestamp(data.created_at),
-        differentiationMode: data.differentiation_mode as DifferentiationMode
-    };
+        return {
+            id: data.id,
+            teacherId: data.teacher_id,
+            name: data.name,
+            questions: data.questions,
+            modules: data.modules,
+            learningMaterials: data.learning_materials,
+            createdAt: parseTimestamp(data.created_at),
+            differentiationMode: data.differentiation_mode as DifferentiationMode
+        };
+    });
   },
 
   savePacket: async (packet: QuizPacket) => {
@@ -119,10 +189,11 @@ export const SupabaseService = {
         questions: packet.questions,
         modules: packet.modules,
         learning_materials: packet.learningMaterials,
-        created_at: packet.createdAt || Date.now(), // Send number, not string
+        created_at: packet.createdAt || Date.now(),
         differentiation_mode: packet.differentiationMode
     });
     if (error) throw error;
+    cache.invalidate(/packet/);
   },
 
   updatePacket: async (packet: QuizPacket) => {
@@ -132,9 +203,13 @@ export const SupabaseService = {
   deletePacket: async (id: string) => {
     const { error } = await supabase.from('packets').delete().eq('id', id);
     if (error) throw error;
+    cache.invalidate(/packet/);
   },
 
   hasPacketResults: async (packetId: string): Promise<boolean> => {
+    const cacheKey = `has_results_${packetId}`;
+    
+    return cache.fetch(cacheKey, async () => {
       const { count, error } = await supabase
         .from('results')
         .select('*', { count: 'exact', head: true })
@@ -142,28 +217,28 @@ export const SupabaseService = {
       
       if (error) throw error;
       return (count || 0) > 0;
+    });
   },
 
   // --- ACHIEVEMENTS ---
   getAchievements: async (): Promise<Achievement[]> => {
-      // For now, we can store achievements in a table or just use a static list/local storage if they are global config.
-      // Assuming we want them in DB:
-      // But for simplicity in migration, let's assume they are stored in a 'achievements' table or just return static if not implemented yet.
-      // Let's implement a simple table fetch.
-      const { data, error } = await supabase.from('achievements').select('*');
-      if (error) {
-          // Fallback if table doesn't exist yet or error
-          console.warn("Could not fetch achievements, returning empty", error);
-          return [];
-      }
-      return data.map((a: any) => ({
-          id: a.id,
-          title: a.title,
-          description: a.description,
-          type: a.type as AchievementType,
-          targetValue: a.target_value,
-          iconUrl: a.icon_url
-      }));
+      const cacheKey = 'achievements_all';
+      
+      return cache.fetch(cacheKey, async () => {
+          const { data, error } = await supabase.from('achievements').select('*');
+          if (error) {
+              console.warn("Could not fetch achievements, returning empty", error);
+              return [];
+          }
+          return data.map((a: any) => ({
+              id: a.id,
+              title: a.title,
+              description: a.description,
+              type: a.type as AchievementType,
+              targetValue: a.target_value,
+              iconUrl: a.icon_url
+          }));
+      });
   },
 
   saveAchievement: async (achievement: Achievement) => {
@@ -176,25 +251,23 @@ export const SupabaseService = {
           icon_url: achievement.iconUrl
       });
       if (error) throw error;
+      cache.invalidate(/achievements/);
   },
 
   deleteAchievement: async (id: string) => {
       const { error } = await supabase.from('achievements').delete().eq('id', id);
       if (error) throw error;
+      cache.invalidate(/achievements/);
   },
 
   evaluateAchievements: async (studentId: string): Promise<Achievement[]> => {
-      // 1. Get Student Profile
+      // Intentionally NOT cached to ensure realtime logic when submitting quiz.
       const { data: student, error: sError } = await supabase.from('profiles').select('*').eq('id', studentId).single();
       if (sError || !student) return [];
 
-      // 2. Get All Results for Student
       const results = await SupabaseService.getResults(studentId);
-
-      // 3. Get All Achievements
       const allAchievements = await SupabaseService.getAchievements();
 
-      // Logic same as StorageService
       const bestResultsMap = new Map<string, StudentResult>();
       results.forEach(r => {
           if (!bestResultsMap.has(r.packetId) || r.score > bestResultsMap.get(r.packetId)!.score) {
@@ -204,7 +277,6 @@ export const SupabaseService = {
       const bestResults = Array.from(bestResultsMap.values());
 
       const newUnlocked: Achievement[] = [];
-      // Parse JSONB for unlocked_achievements
       const currentUnlockedIds = new Set<string>(student.unlocked_achievements || []);
 
       const totalPackets = bestResults.length;
@@ -231,6 +303,8 @@ export const SupabaseService = {
           await supabase.from('profiles').update({
               unlocked_achievements: Array.from(currentUnlockedIds)
           }).eq('id', studentId);
+          // Also invalidate students cache since their profile changed
+          cache.invalidate(/students/);
       }
 
       return newUnlocked;
@@ -238,59 +312,55 @@ export const SupabaseService = {
 
   // --- RESULTS ---
   getResults: async (studentId?: string): Promise<StudentResult[]> => {
-    // 1. Fetch raw results without join to avoid ambiguous relationship errors
-    let query = supabase.from('results').select('*');
-    if (studentId) query = query.eq('student_id', studentId);
+    const cacheKey = studentId ? `results_${studentId}` : 'results_all';
     
-    const { data: resultsData, error: resultsError } = await query;
-    if (resultsError) throw resultsError;
-
-    if (!resultsData || resultsData.length === 0) return [];
-
-    // 2. Fetch profiles for the students in the results
-    // Get unique student IDs
-    const studentIds = Array.from(new Set(resultsData.map((r: any) => r.student_id)));
-    
-    // Fetch profiles
-    const { data: profilesData, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id, name, class_name')
-        .in('id', studentIds);
+    return cache.fetch(cacheKey, async () => {
+        let query = supabase.from('results').select('*');
+        if (studentId) query = query.eq('student_id', studentId);
         
-    if (profilesError) {
-        console.error("Error fetching profiles for results:", profilesError);
-        // Fallback: continue without names
-    }
-
-    // Create a map for quick lookup
-    const profilesMap = new Map();
-    if (profilesData) {
-        profilesData.forEach((p: any) => {
-            profilesMap.set(p.id, p);
+        const { data: resultsData, error: resultsError } = await query;
+        if (resultsError) throw resultsError;
+    
+        if (!resultsData || resultsData.length === 0) return [];
+    
+        const studentIds = Array.from(new Set(resultsData.map((r: any) => r.student_id)));
+        
+        const { data: profilesData, error: profilesError } = await supabase
+            .from('profiles')
+            .select('id, name, class_name')
+            .in('id', studentIds);
+            
+        if (profilesError) {
+            console.error("Error fetching profiles for results:", profilesError);
+        }
+    
+        const profilesMap = new Map();
+        if (profilesData) {
+            profilesData.forEach((p: any) => {
+                profilesMap.set(p.id, p);
+            });
+        }
+    
+        return resultsData.map((r: any) => {
+            const profile = profilesMap.get(r.student_id);
+            return {
+                id: r.id,
+                studentId: r.student_id,
+                studentName: profile?.name || 'Unknown',
+                className: profile?.class_name || 'Unknown',
+                packetId: r.packet_id,
+                score: r.score,
+                abilityLevel: r.ability_level,
+                answers: r.answers,
+                selectedIndices: r.selected_indices,
+                attemptNumber: r.attempt_number,
+                timestamp: parseTimestamp(r.created_at || r.timestamp)
+            };
         });
-    }
-
-    // 3. Merge data
-    return resultsData.map((r: any) => {
-        const profile = profilesMap.get(r.student_id);
-        return {
-            id: r.id,
-            studentId: r.student_id,
-            studentName: profile?.name || 'Unknown',
-            className: profile?.class_name || 'Unknown',
-            packetId: r.packet_id,
-            score: r.score,
-            abilityLevel: r.ability_level,
-            answers: r.answers,
-            selectedIndices: r.selected_indices,
-            attemptNumber: r.attempt_number,
-            timestamp: parseTimestamp(r.created_at || r.timestamp)
-        };
     });
   },
 
   saveResult: async (result: StudentResult) => {
-    // Calculate attempt number
     const { count } = await supabase
         .from('results')
         .select('*', { count: 'exact', head: true })
@@ -298,68 +368,69 @@ export const SupabaseService = {
         .eq('packet_id', result.packetId);
     
     const attemptNumber = (count || 0) + 1;
-
-    // Prepare payload, excluding created_at if it causes issues, or relying on DB default
-    // We try to send 'timestamp' if created_at is missing in schema, or just let DB handle it.
-    // Since we got "Could not find created_at", we remove it. 
-    // We'll try to send 'timestamp' as a fallback if the user renamed it, 
-    // BUT sending a non-existent column also errors. 
-    // SAFEST STRATEGY: Don't send time, let DB default handle it.
     
     const { error } = await supabase.from('results').insert({
         id: result.id,
         student_id: result.studentId,
-        // student_name and class_name removed
         packet_id: result.packetId,
         score: result.score,
         ability_level: result.abilityLevel,
         answers: result.answers,
         selected_indices: result.selectedIndices,
         attempt_number: attemptNumber,
-        // created_at removed to fix "Could not find column" error. 
-        // Assuming DB has a default timestamp column or we accept missing time for now.
     });
     if (error) throw error;
+    
+    // Invalidate caches
+    cache.invalidate(/results/);
+    cache.invalidate(/has_results/);
 
     return SupabaseService.evaluateAchievements(result.studentId);
   },
 
   // --- USERS ---
   getTeachers: async (): Promise<TeacherProfile[]> => {
-      const { data, error } = await supabase.from('profiles').select('*').eq('role', 'teacher');
-      if (error) throw error;
-      return data.map((u: any) => ({
-          id: u.id,
-          name: u.name,
-          email: u.email,
-          subject: u.subject,
-          passwordHash: '', // Not needed/available
-          isActive: u.is_active !== false, 
-          joinedAt: parseTimestamp(u.joined_at || u.created_at),
-          photoUrl: u.photo_url
-      }));
+      const cacheKey = 'teachers_all';
+      
+      return cache.fetch(cacheKey, async () => {
+          const { data, error } = await supabase.from('profiles').select('*').eq('role', 'teacher');
+          if (error) throw error;
+          return data.map((u: any) => ({
+              id: u.id,
+              name: u.name,
+              email: u.email,
+              subject: u.subject,
+              passwordHash: '',
+              isActive: u.is_active !== false, 
+              joinedAt: parseTimestamp(u.joined_at || u.created_at),
+              photoUrl: u.photo_url
+          }));
+      });
   },
 
   getStudents: async (): Promise<StudentProfile[]> => {
-      const { data, error } = await supabase.from('profiles').select('*').eq('role', 'student');
-      if (error) throw error;
-      return data.map((u: any) => ({
-          id: u.id,
-          name: u.name,
-          email: u.email,
-          className: u.class_name,
-          schoolName: u.school_name,
-          passwordHash: '',
-          isActive: u.is_active !== false,
-          joinedAt: parseTimestamp(u.joined_at || u.created_at),
-          photoUrl: u.photo_url,
-          unlockedAchievements: u.unlocked_achievements,
-          learningStyle: u.learning_style
-      }));
+      const cacheKey = 'students_all';
+      
+      return cache.fetch(cacheKey, async () => {
+          const { data, error } = await supabase.from('profiles').select('*').eq('role', 'student');
+          if (error) throw error;
+          return data.map((u: any) => ({
+              id: u.id,
+              name: u.name,
+              email: u.email,
+              className: u.class_name,
+              schoolName: u.school_name,
+              passwordHash: '',
+              isActive: u.is_active !== false,
+              joinedAt: parseTimestamp(u.joined_at || u.created_at),
+              photoUrl: u.photo_url,
+              unlockedAchievements: u.unlocked_achievements,
+              learningStyle: u.learning_style
+          }));
+      });
   },
 
   registerTeacher: async (name: string, email: string, password: string, subject: string) => {
-      // 1. Sign Up Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
           email,
           password,
@@ -367,7 +438,6 @@ export const SupabaseService = {
       if (authError) return { success: false, message: authError.message };
       if (!authData.user) return { success: false, message: "Gagal membuat user auth" };
 
-      // 2. Create Profile
       const { error: profileError } = await supabase.from('profiles').insert({
           id: authData.user.id,
           email,
@@ -378,6 +448,7 @@ export const SupabaseService = {
       });
 
       if (profileError) return { success: false, message: profileError.message };
+      cache.invalidate(/teachers/);
       return { success: true, message: 'Registrasi berhasil. Silakan cek email untuk verifikasi (jika diaktifkan).' };
   },
 
@@ -401,17 +472,20 @@ export const SupabaseService = {
       });
 
       if (profileError) return { success: false, message: profileError.message };
+      cache.invalidate(/students/);
       return { success: true, message: 'Registrasi berhasil. Silakan cek email untuk verifikasi (jika diaktifkan).' };
   },
 
   updateTeacherStatus: async (id: string, isActive: boolean) => {
       const { error } = await supabase.from('profiles').update({ is_active: isActive }).eq('id', id);
       if (error) throw error;
+      cache.invalidate(/teachers/);
   },
 
   updateStudentStatus: async (id: string, isActive: boolean) => {
       const { error } = await supabase.from('profiles').update({ is_active: isActive }).eq('id', id);
       if (error) throw error;
+      cache.invalidate(/students/);
   },
 
   updateTeacherProfile: async (id: string, updates: Partial<TeacherProfile>) => {
@@ -421,6 +495,7 @@ export const SupabaseService = {
           photo_url: updates.photoUrl
       }).eq('id', id);
       if (error) throw error;
+      cache.invalidate(/teachers/);
   },
 
   updateStudentProfile: async (id: string, updates: Partial<StudentProfile>) => {
@@ -433,10 +508,10 @@ export const SupabaseService = {
 
       const { error } = await supabase.from('profiles').update(dbUpdates).eq('id', id);
       if (error) throw error;
+      cache.invalidate(/students/);
   },
 
   resetTeacherPassword: async (id: string, newPassword?: string) => {
-      // Fetch email first
       const { data, error } = await supabase.from('profiles').select('email').eq('id', id).single();
       if (error || !data) return false;
       
@@ -448,7 +523,6 @@ export const SupabaseService = {
   },
 
   resetStudentPassword: async (id: string, newPassword?: string) => {
-      // Fetch email first
       const { data, error } = await supabase.from('profiles').select('email').eq('id', id).single();
       if (error || !data) return false;
       
@@ -466,7 +540,6 @@ export const SupabaseService = {
       });
       
       if (error) {
-          // Fallback for hardcoded admin if not yet created in Supabase Auth
           if (email === 'admin@sekolah.id' && password === 'admin123') {
                return { success: true, role: 'admin', message: 'Login Admin (Bypass Mode - RLS mungkin memblokir data)' };
           }
@@ -496,6 +569,7 @@ export const SupabaseService = {
   },
 
   logout: async () => {
+      cache.invalidate(/.*/); // Clear all caches on logout
       await supabase.auth.signOut();
   },
 

@@ -6,7 +6,7 @@ interface Props {
   colorClass?: string; // e.g., 'bg-green-500'
 }
 
-export const ContributionGraph: React.FC<Props> = ({ data, title = "Aktivitas", colorClass = "bg-green-500" }) => {
+export const ContributionGraph: React.FC<Props> = React.memo(({ data, title = "Aktivitas", colorClass = "bg-green-500" }) => {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
 
   // 1. Get available years from data
@@ -150,4 +150,4 @@ export const ContributionGraph: React.FC<Props> = ({ data, title = "Aktivitas", 
       </div>
     </div>
   );
-};
+});

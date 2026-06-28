@@ -148,10 +148,10 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                 {/* Pinned Collapse Button */}
                 <button
                     onClick={() => setIsCollapsed(!isCollapsed)}
-                    className="absolute -right-2 top-12 w-6 h-6 bg-white dark:bg-slate-800 border border-stone-200 dark:border-slate-700 rounded-full flex items-center justify-center text-stone-400 hover:text-stone-700 dark:hover:text-slate-200 shadow-sm z-50 transition-transform duration-300 hover:scale-110"
+                    className="absolute -right-1.5 top-8 w-4 h-4 bg-white dark:bg-slate-800 border border-stone-200 dark:border-slate-700 rounded-full flex items-center justify-center text-stone-400 hover:text-stone-700 dark:hover:text-slate-200 shadow-sm z-50 transition-transform duration-300 hover:scale-110"
                     aria-label="Toggle Sidebar"
                 >
-                    <ChevronLeft className={`w-4 h-4 transition-transform duration-300 ${isCollapsed ? 'rotate-180' : ''}`} />
+                    <ChevronLeft className={`w-3 h-3 transition-transform duration-300 ${isCollapsed ? 'rotate-180' : ''}`} />
                 </button>
             </aside>
 

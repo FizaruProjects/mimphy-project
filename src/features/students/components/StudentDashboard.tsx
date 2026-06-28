@@ -1,16 +1,19 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { QuizPacket, AbilityLevel, StudentResult, UserSession, Achievement, DifferentiationMode, LearningStyle, LearningMaterial, ModuleItem } from '@/types';
 import { SupabaseService } from '@/lib/supabaseService';
 import { generateLearningModule } from '@/lib/geminiService';
-import { BookOpen, ChevronRight, ChevronLeft, Loader2, FileText, Download, Flag, LogOut, Sparkles, UserCircle, Star, Award, Zap, Camera, Medal, Home, LayoutGrid, CheckCircle2, BrainCircuit, Menu, X, Youtube, Play, ExternalLink, ArrowRight, Link } from 'lucide-react';
+import { BookOpen, Trophy, Play, CheckCircle2, XCircle, BrainCircuit, History, Medal, UserCircle, ChevronRight, BarChart2, Star, Target, Zap, Lock, Book, Camera, ChevronLeft, Loader2, FileText, Download, Flag, LogOut, Sparkles, Youtube, ExternalLink, ArrowRight, Link, Menu, X, Home, LayoutGrid, Award } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { DashboardLayout } from '@/layouts/DashboardLayout';
-import { ContributionGraph } from '@/components/ContributionGraph';
-import { StudentReportCard } from '@/features/students/components/StudentReportCard';
+import { SkeletonLoader } from '@/components/SkeletonLoader';
+
+// Lazy load heavy components
+const StudentReportCard = lazy(() => import('@/features/students/components/StudentReportCard').then(m => ({ default: m.StudentReportCard })));
+const ContributionGraph = lazy(() => import('@/components/ContributionGraph').then(m => ({ default: m.ContributionGraph })));
 
 interface Props {
   session: UserSession;
@@ -687,14 +690,16 @@ export const StudentDashboard: React.FC<Props> = ({ session, onLogout }) => {
                       </div>
 
                       <div className="space-y-6">
-                          {/* Contribution Graph */}
-                          <div className="mb-6">
-                             <ContributionGraph 
-                                data={myResults.map(r => ({ date: new Date(r.timestamp).toISOString(), count: 1 }))}
-                                title="Aktivitas Belajar"
-                                colorClass="bg-green-500"
-                             />
-                          </div>
+                          <Suspense fallback={<SkeletonLoader />}>
+                              {/* Contribution Graph */}
+                              <div className="mb-6">
+                                 <ContributionGraph 
+                                    data={myResults.map(r => ({ date: new Date(r.timestamp).toISOString(), count: 1 }))}
+                                    title="Aktivitas Belajar"
+                                    colorClass="bg-green-500"
+                                 />
+                              </div>
+                          </Suspense>
 
                           {/* Edit Profile Section */}
                           <div className="bg-stone-50 dark:bg-slate-700/30 p-6 rounded-2xl border border-stone-100 dark:border-slate-700">
@@ -760,10 +765,12 @@ export const StudentDashboard: React.FC<Props> = ({ session, onLogout }) => {
         tabs={tabs}
     >
               <div className="w-full flex-1">
-                  <StudentReportCard 
-                      studentId={session.userId!} 
-                      onBack={goHome}
-                  />
+                  <Suspense fallback={<SkeletonLoader />}>
+                      <StudentReportCard 
+                          studentId={session.userId!} 
+                          onBack={goHome}
+                      />
+                  </Suspense>
               </div>
               </DashboardLayout>
       );

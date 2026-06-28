@@ -6,6 +6,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { DashboardLayout } from '@/layouts/DashboardLayout';
 import { ContributionGraph } from '@/components/ContributionGraph';
+import { useDebounce } from '@/hooks/useDebounce';
 
 interface Props {
     onLogout: () => void;
@@ -22,6 +23,7 @@ export const AdminDashboard: React.FC<Props> = ({ onLogout }) => {
     
     // Search State
     const [searchTerm, setSearchTerm] = useState('');
+    const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
     // Modal State
     const [resetTarget, setResetTarget] = useState<{id: string, name: string, type: 'teacher'|'student'} | null>(null);
@@ -131,23 +133,23 @@ export const AdminDashboard: React.FC<Props> = ({ onLogout }) => {
     };
 
     const filteredTeachers = useMemo(() => {
-        if (!searchTerm) return teachers;
-        const lowerTerm = searchTerm.toLowerCase();
+        if (!debouncedSearchTerm) return teachers;
+        const lowerTerm = debouncedSearchTerm.toLowerCase();
         return teachers.filter(t => 
             t.name.toLowerCase().includes(lowerTerm) || 
             t.email.toLowerCase().includes(lowerTerm)
         );
-    }, [teachers, searchTerm]);
+    }, [teachers, debouncedSearchTerm]);
 
     const filteredStudents = useMemo(() => {
-        if (!searchTerm) return students;
-        const lowerTerm = searchTerm.toLowerCase();
+        if (!debouncedSearchTerm) return students;
+        const lowerTerm = debouncedSearchTerm.toLowerCase();
         return students.filter(s => 
             s.name.toLowerCase().includes(lowerTerm) || 
             s.email.toLowerCase().includes(lowerTerm) ||
             s.className.toLowerCase().includes(lowerTerm)
         );
-    }, [students, searchTerm]);
+    }, [students, debouncedSearchTerm]);
 
     const studentLevelData = useMemo(() => {
         const high = results.filter(r => r.abilityLevel === AbilityLevel.HIGH).length;

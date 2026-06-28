@@ -4,11 +4,14 @@ import { UserSession } from '@/types';
 import { SupabaseService } from '@/lib/supabaseService';
 import { ThemeProvider } from '@/app/providers/ThemeContext';
 import { LoginPage } from '@/features/auth/components/LoginPage';
-import { TeacherDashboard } from '@/features/teachers/components/TeacherDashboard';
-import { StudentDashboard } from '@/features/students/components/StudentDashboard';
-import { AdminDashboard } from '@/features/admin/components/AdminDashboard';
 import { MainLayout } from '@/layouts/MainLayout';
 import { ProtectedRoute } from '@/layouts/ProtectedRoute';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { SkeletonLoader } from '@/components/SkeletonLoader';
+
+const TeacherDashboard = React.lazy(() => import('@/features/teachers/components/TeacherDashboard').then(m => ({ default: m.TeacherDashboard })));
+const StudentDashboard = React.lazy(() => import('@/features/students/components/StudentDashboard').then(m => ({ default: m.StudentDashboard })));
+const AdminDashboard = React.lazy(() => import('@/features/admin/components/AdminDashboard').then(m => ({ default: m.AdminDashboard })));
 
 const MainApp: React.FC = () => {
   const [session, setSession] = useState<UserSession>({ role: null });
@@ -75,19 +78,31 @@ const MainApp: React.FC = () => {
 
           {/* Protected Routes for Student */}
           <Route element={<ProtectedRoute session={session} allowedRoles={['student']} />}>
-            <Route path="/student" element={<StudentDashboard session={session} onLogout={handleLogout} />} />
+            <Route path="/student" element={
+              <React.Suspense fallback={<SkeletonLoader />}>
+                <StudentDashboard session={session} onLogout={handleLogout} />
+              </React.Suspense>
+            } />
             {/* Future nested routes like /student/quiz/:id can go here */}
           </Route>
 
           {/* Protected Routes for Teacher */}
           <Route element={<ProtectedRoute session={session} allowedRoles={['teacher']} />}>
-            <Route path="/teacher" element={<TeacherDashboard session={session} onLogout={handleLogout} />} />
+            <Route path="/teacher" element={
+              <React.Suspense fallback={<SkeletonLoader />}>
+                <TeacherDashboard session={session} onLogout={handleLogout} />
+              </React.Suspense>
+            } />
             {/* Future nested routes like /teacher/packets can go here */}
           </Route>
 
           {/* Protected Routes for Admin */}
           <Route element={<ProtectedRoute session={session} allowedRoles={['admin']} />}>
-            <Route path="/admin" element={<AdminDashboard onLogout={handleLogout} />} />
+            <Route path="/admin" element={
+              <React.Suspense fallback={<SkeletonLoader />}>
+                <AdminDashboard onLogout={handleLogout} />
+              </React.Suspense>
+            } />
           </Route>
           
           {/* Catch-all 404 Route */}
@@ -99,9 +114,11 @@ const MainApp: React.FC = () => {
 };
 
 const App: React.FC = () => (
-  <ThemeProvider>
-    <MainApp />
-  </ThemeProvider>
+  <ErrorBoundary>
+    <ThemeProvider>
+      <MainApp />
+    </ThemeProvider>
+  </ErrorBoundary>
 );
 
 export default App;

@@ -1,19 +1,20 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { Question, QuizPacket, StudentResult, UserSession } from '@/types';
 import { SupabaseService } from '@/lib/supabaseService';
 import { BookOpen, Plus, BarChart3, LogOut, Camera, UserCircle2, Medal, FolderCog, User } from 'lucide-react';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { DashboardLayout } from '@/layouts/DashboardLayout';
+import { SkeletonLoader } from '@/components/SkeletonLoader';
 
-// Import sub-components
-import { TeacherQuestionBank } from '@/features/teachers/components/TeacherQuestionBank';
-import { TeacherPacketCreator } from '@/features/teachers/components/TeacherPacketCreator';
-import { TeacherResults } from '@/features/teachers/components/TeacherResults';
-import { TeacherAchievementCreator } from '@/features/teachers/components/TeacherAchievementCreator';
-import { TeacherPacketManager } from '@/features/teachers/components/TeacherPacketManager';
-import { ContributionGraph } from '@/components/ContributionGraph';
-import { TeacherStudentReport } from '@/features/teachers/components/TeacherStudentReport';
+// Lazy load heavy components
+const TeacherQuestionBank = lazy(() => import('@/features/teachers/components/TeacherQuestionBank').then(m => ({ default: m.TeacherQuestionBank })));
+const TeacherPacketCreator = lazy(() => import('@/features/teachers/components/TeacherPacketCreator').then(m => ({ default: m.TeacherPacketCreator })));
+const TeacherResults = lazy(() => import('@/features/teachers/components/TeacherResults').then(m => ({ default: m.TeacherResults })));
+const TeacherAchievementCreator = lazy(() => import('@/features/teachers/components/TeacherAchievementCreator').then(m => ({ default: m.TeacherAchievementCreator })));
+const TeacherPacketManager = lazy(() => import('@/features/teachers/components/TeacherPacketManager').then(m => ({ default: m.TeacherPacketManager })));
+const ContributionGraph = lazy(() => import('@/components/ContributionGraph').then(m => ({ default: m.ContributionGraph })));
+const TeacherStudentReport = lazy(() => import('@/features/teachers/components/TeacherStudentReport').then(m => ({ default: m.TeacherStudentReport })));
 
 interface Props {
     session: UserSession;
@@ -101,6 +102,7 @@ export const TeacherDashboard: React.FC<Props> = ({ session, onLogout }) => {
         ]}
     >
       <div className="bg-white/40 dark:bg-slate-800/40 backdrop-blur-sm rounded-[2.5rem] p-4 lg:p-8 flex-1">
+        <Suspense fallback={<SkeletonLoader />}>
           {activeTab === 'questions' && (
             <TeacherQuestionBank 
                 questions={questions} 
@@ -181,9 +183,6 @@ export const TeacherDashboard: React.FC<Props> = ({ session, onLogout }) => {
                     
                     const updates: any = { name };
                     if (password) {
-                        // In Supabase, password reset is handled differently (Auth API), 
-                        // but for now we can't easily update it via profile table unless we built custom logic.
-                        // We will skip password update here for Supabase Auth or implement a proper change password flow.
                         alert("Fitur ganti password belum tersedia untuk mode Cloud.");
                     }
                     
@@ -204,6 +203,7 @@ export const TeacherDashboard: React.FC<Props> = ({ session, onLogout }) => {
                 </form>
             </div>
           )}
+        </Suspense>
       </div>
     </DashboardLayout>
   );
