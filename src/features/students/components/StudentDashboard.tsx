@@ -10,6 +10,8 @@ import rehypeKatex from 'rehype-katex';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { DashboardLayout } from '@/layouts/DashboardLayout';
 import { SkeletonLoader } from '@/components/SkeletonLoader';
+import { AnimatedCounter } from '@/components/AnimatedCounter';
+import { useStudentStats } from '@/features/students/hooks/useStudentStats';
 
 // Lazy load heavy components
 const StudentReportCard = lazy(() => import('@/features/students/components/StudentReportCard').then(m => ({ default: m.StudentReportCard })));
@@ -59,9 +61,11 @@ export const StudentDashboard: React.FC<Props> = ({ session, onLogout }) => {
   const [myStats, setMyStats] = useState({ totalPackets: 0, avgScore: 0 });
   const [myAchievements, setMyAchievements] = useState<string[]>([]); // IDs
   const [allAchievements, setAllAchievements] = useState<Achievement[]>([]);
-  const [availablePacketsCount, setAvailablePacketsCount] = useState(0);
   const [allPackets, setAllPackets] = useState<QuizPacket[]>([]);
   const [myResults, setMyResults] = useState<StudentResult[]>([]);
+  
+  // React Query Hooks
+  const { data: stats, isLoading: isLoadingStats } = useStudentStats(session.userId);
 
   // Module State (Legacy/AI + New List)
   const [aiModule, setAiModule] = useState<string | null>(null);
@@ -78,19 +82,6 @@ export const StudentDashboard: React.FC<Props> = ({ session, onLogout }) => {
       const allResults = await SupabaseService.getResults();
       const myResultsFiltered = allResults.filter(r => r.studentId === session.userId);
       setMyResults(myResultsFiltered);
-      
-      const bestResultsMap = new Map<string, StudentResult>();
-      myResultsFiltered.forEach(r => {
-          if (!bestResultsMap.has(r.packetId) || r.score > bestResultsMap.get(r.packetId)!.score) {
-              bestResultsMap.set(r.packetId, r);
-          }
-      });
-      const bestResults = Array.from(bestResultsMap.values());
-
-      const totalP = bestResults.length;
-      const avg = totalP > 0 ? Math.round(bestResults.reduce((a,b) => a + b.score, 0) / totalP) : 0;
-      
-      setMyStats({ totalPackets: totalP, avgScore: avg });
 
       const students = await SupabaseService.getStudents();
       const me = students.find(s => s.id === session.userId);
@@ -102,7 +93,6 @@ export const StudentDashboard: React.FC<Props> = ({ session, onLogout }) => {
       
       const packets = await SupabaseService.getPackets();
       setAllPackets(packets);
-      setAvailablePacketsCount(packets.length);
   };
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -400,15 +390,15 @@ export const StudentDashboard: React.FC<Props> = ({ session, onLogout }) => {
                       {/* ... cards ... */}
                       <div className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-md p-6 rounded-3xl border border-white dark:border-slate-700 shadow-sm flex items-center transition-transform hover:scale-[1.02]">
                           <div className="w-12 h-12 rounded-2xl bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-300 flex items-center justify-center mr-4"><BookOpen className="w-6 h-6" /></div>
-                          <div><p className="text-stone-500 dark:text-slate-400 text-sm font-bold">Paket Selesai</p><p className="text-2xl font-extrabold text-stone-800 dark:text-white">{myStats.totalPackets} <span className="text-xs text-stone-400 font-normal">/ {availablePacketsCount}</span></p></div>
+                          <div><p className="text-stone-500 dark:text-slate-400 text-sm font-bold">Paket Selesai</p><p className="text-2xl font-extrabold text-stone-800 dark:text-white"><AnimatedCounter value={stats?.totalPackets || 0} /> <span className="text-xs text-stone-400 font-normal">/ {stats?.availablePacketsCount || 0}</span></p></div>
                       </div>
                       <div className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-md p-6 rounded-3xl border border-white dark:border-slate-700 shadow-sm flex items-center transition-transform hover:scale-[1.02]">
                           <div className="w-12 h-12 rounded-2xl bg-orange-100 dark:bg-orange-900 text-orange-600 dark:text-orange-300 flex items-center justify-center mr-4"><Star className="w-6 h-6" /></div>
-                          <div><p className="text-stone-500 dark:text-slate-400 text-sm font-bold">Rata-rata (Terbaik)</p><p className="text-2xl font-extrabold text-stone-800 dark:text-white">{myStats.avgScore}</p></div>
+                          <div><p className="text-stone-500 dark:text-slate-400 text-sm font-bold">Rata-rata (Terbaik)</p><p className="text-2xl font-extrabold text-stone-800 dark:text-white"><AnimatedCounter value={stats?.avgScore || 0} /></p></div>
                       </div>
                       <div className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-md p-6 rounded-3xl border border-white dark:border-slate-700 shadow-sm flex items-center transition-transform hover:scale-[1.02]">
                           <div className="w-12 h-12 rounded-2xl bg-stone-200 dark:bg-stone-800 text-stone-600 dark:text-stone-300 flex items-center justify-center mr-4"><Medal className="w-6 h-6" /></div>
-                          <div><p className="text-stone-500 dark:text-slate-400 text-sm font-bold">Prestasi Diraih</p><p className="text-2xl font-extrabold text-stone-800 dark:text-white">{myAchievements.length} <span className="text-xs text-stone-400 font-normal">/ {allAchievements.length}</span></p></div>
+                          <div><p className="text-stone-500 dark:text-slate-400 text-sm font-bold">Prestasi Diraih</p><p className="text-2xl font-extrabold text-stone-800 dark:text-white"><AnimatedCounter value={stats?.unlockedAchievementsCount || 0} /> <span className="text-xs text-stone-400 font-normal">/ {allAchievements.length}</span></p></div>
                       </div>
                   </div>
                   <div className="bg-gradient-to-r from-red-600 to-orange-600 rounded-[2.5rem] p-6 md:p-10 text-white relative overflow-hidden shadow-xl transition-transform hover:scale-[1.01]">

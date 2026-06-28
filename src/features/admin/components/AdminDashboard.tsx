@@ -6,7 +6,13 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { DashboardLayout } from '@/layouts/DashboardLayout';
 import { ContributionGraph } from '@/components/ContributionGraph';
+import { AnimatedCounter } from '@/components/AnimatedCounter';
 import { useDebounce } from '@/hooks/useDebounce';
+import { useTeachers } from '@/hooks/useTeachers';
+import { useStudents } from '@/hooks/useStudents';
+import { useQuestions } from '@/hooks/useQuestions';
+import { useQuizPackets } from '@/hooks/useQuizPackets';
+import { useResults } from '@/hooks/useResults';
 
 interface Props {
     onLogout: () => void;
@@ -14,11 +20,13 @@ interface Props {
 
 export const AdminDashboard: React.FC<Props> = ({ onLogout }) => {
     const [activeTab, setActiveTab] = useState<'overview' | 'teachers' | 'students' | 'analytics'>('overview');
-    const [teachers, setTeachers] = useState<TeacherProfile[]>([]);
-    const [students, setStudents] = useState<StudentProfile[]>([]);
-    const [questions, setQuestions] = useState<Question[]>([]);
-    const [packets, setPackets] = useState<QuizPacket[]>([]);
-    const [results, setResults] = useState<StudentResult[]>([]);
+    
+    const { data: teachers = [], refetch: refetchTeachers } = useTeachers();
+    const { data: students = [], refetch: refetchStudents } = useStudents();
+    const { data: questions = [], refetch: refetchQuestions } = useQuestions();
+    const { data: packets = [], refetch: refetchPackets } = useQuizPackets();
+    const { data: results = [], refetch: refetchResults } = useResults();
+
     const [filterTime, setFilterTime] = useState<'all' | 'month' | 'week'>('all');
     
     // Search State
@@ -42,23 +50,12 @@ export const AdminDashboard: React.FC<Props> = ({ onLogout }) => {
     });
 
     const refreshData = async () => {
-        const t = await SupabaseService.getTeachers();
-        setTeachers(t);
-        const s = await SupabaseService.getStudents();
-        setStudents(s);
-        const q = await SupabaseService.getQuestions();
-        setQuestions(q);
-        const p = await SupabaseService.getPackets();
-        setPackets(p);
-        const r = await SupabaseService.getResults();
-        setResults(r);
+        refetchTeachers();
+        refetchStudents();
+        refetchQuestions();
+        refetchPackets();
+        refetchResults();
     };
-
-    useEffect(() => {
-        refreshData();
-        const interval = setInterval(refreshData, 10000); 
-        return () => clearInterval(interval);
-    }, []);
 
     // Toggle logic for both teachers and students
     const handleToggleStatus = async (id: string, currentStatus: boolean, type: 'teacher' | 'student') => {
@@ -369,9 +366,11 @@ export const AdminDashboard: React.FC<Props> = ({ onLogout }) => {
                                     <GraduationCap className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
                                 </div>
                             </div>
-                            <p className="text-4xl font-black text-slate-800 dark:text-white">{students.length}</p>
+                            <p className="text-4xl font-black text-slate-800 dark:text-white">
+                                <AnimatedCounter value={students.length} />
+                            </p>
                             <p className="text-xs text-green-600 dark:text-green-400 font-bold mt-2 flex items-center bg-green-50 dark:bg-green-900/30 w-fit px-2 py-1 rounded-full">
-                                <UserCheck className="w-3 h-3 mr-1" /> {students.filter(s => s.isActive).length} Aktif
+                                <UserCheck className="w-3 h-3 mr-1" /> <AnimatedCounter value={students.filter(s => s.isActive).length} /> Aktif
                             </p>
                         </div>
                         <div className="bg-white dark:bg-slate-800 p-8 rounded-[2rem] shadow-sm border border-slate-100 dark:border-slate-700 hover:shadow-md transition-shadow">
@@ -381,8 +380,10 @@ export const AdminDashboard: React.FC<Props> = ({ onLogout }) => {
                                     <School className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                                 </div>
                             </div>
-                            <p className="text-4xl font-black text-slate-800 dark:text-white">{teachers.length}</p>
-                            <p className="text-xs text-slate-400 dark:text-slate-500 font-medium mt-2">Membuat {questions.length} soal</p>
+                            <p className="text-4xl font-black text-slate-800 dark:text-white">
+                                <AnimatedCounter value={teachers.length} />
+                            </p>
+                            <p className="text-xs text-slate-400 dark:text-slate-500 font-medium mt-2">Membuat <AnimatedCounter value={questions.length} /> soal</p>
                         </div>
                         <div className="bg-white dark:bg-slate-800 p-8 rounded-[2rem] shadow-sm border border-slate-100 dark:border-slate-700 hover:shadow-md transition-shadow">
                             <div className="flex items-center justify-between mb-4">
@@ -391,7 +392,9 @@ export const AdminDashboard: React.FC<Props> = ({ onLogout }) => {
                                     <BarChart3 className="w-6 h-6 text-green-600 dark:text-green-400" />
                                 </div>
                             </div>
-                            <p className="text-4xl font-black text-slate-800 dark:text-white">{results.length}</p>
+                            <p className="text-4xl font-black text-slate-800 dark:text-white">
+                                <AnimatedCounter value={results.length} />
+                            </p>
                             <p className="text-xs text-slate-400 dark:text-slate-500 font-medium mt-2">Kali pengerjaan</p>
                         </div>
                     </div>

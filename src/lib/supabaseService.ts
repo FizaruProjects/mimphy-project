@@ -581,6 +581,12 @@ export const SupabaseService = {
       const { data: { session }, error } = await supabase.auth.getSession();
       if (error || !session) return null;
       
+      // Admin users may not have a profile record, their role is in metadata
+      const metaRole = session.user.user_metadata?.role || session.user.app_metadata?.role;
+      if (metaRole === 'admin') {
+          return { role: 'admin' as const, userId: session.user.id };
+      }
+      
       const { data: profile } = await supabase
         .from('profiles')
         .select('*')
