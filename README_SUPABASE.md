@@ -61,6 +61,7 @@ create table packets (
   modules jsonb, -- PacketModules structure
   learning_materials jsonb, -- Array of LearningMaterial objects
   differentiation_mode text default 'content',
+  status text default 'ACTIVE' check (status in ('DRAFT', 'ACTIVE', 'COMPLETED')),
   created_at bigint default (extract(epoch from now()) * 1000)
 );
 
@@ -85,6 +86,18 @@ create table achievements (
   type text not null,
   target_value int not null,
   icon_url text
+);
+
+-- 6. Test Statistics (Kategorisasi Azwar & SD)
+create table test_statistics (
+  test_id text primary key references packets(id) on delete cascade,
+  participant_count int not null,
+  mean numeric not null,
+  standard_deviation numeric not null,
+  lower_threshold numeric not null,
+  upper_threshold numeric not null,
+  completion_method text default 'manual',
+  completed_at bigint default (extract(epoch from now()) * 1000)
 );
 ```
 

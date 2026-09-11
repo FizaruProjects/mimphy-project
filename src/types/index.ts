@@ -8,7 +8,20 @@ export enum Difficulty {
 export enum AbilityLevel {
   HIGH = 'Tinggi',
   MEDIUM = 'Sedang',
-  BASIC = 'Dasar'
+  BASIC = 'Rendah' // Rendah (Azwar categorization), supports legacy 'Dasar'
+}
+
+export type PacketStatus = 'DRAFT' | 'ACTIVE' | 'COMPLETED';
+
+export interface TestStatistics {
+  testId: string;
+  participantCount: number;
+  mean: number;
+  standardDeviation: number;
+  lowerThreshold: number;
+  upperThreshold: number;
+  completionMethod?: 'manual' | 'all_completed';
+  completedAt?: number;
 }
 
 // NEW: Mode Diferensiasi
@@ -118,6 +131,7 @@ export interface QuizPacket {
   learningMaterials?: LearningMaterial[]; // General materials (pra-kuis)
   createdAt: number;
   differentiationMode: DifferentiationMode; // Wajib dipilih guru
+  status?: PacketStatus; // DRAFT | ACTIVE | COMPLETED
   // Legacy support (optional)
   pdfModules?: any; 
 }

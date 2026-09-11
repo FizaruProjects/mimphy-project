@@ -3,7 +3,7 @@ import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { QuizPacket, AbilityLevel, StudentResult, UserSession, Achievement, DifferentiationMode, LearningStyle, LearningMaterial, ModuleItem } from '@/types';
 import { SupabaseService } from '@/lib/supabaseService';
 import { generateLearningModule } from '@/lib/geminiService';
-import { BookOpen, Trophy, Play, CheckCircle2, XCircle, BrainCircuit, History, Medal, UserCircle, ChevronRight, BarChart2, Star, Target, Zap, Lock, Book, Camera, ChevronLeft, Loader2, FileText, Download, Flag, LogOut, Sparkles, Youtube, ExternalLink, ArrowRight, Link, Menu, X, Home, LayoutGrid, Award } from 'lucide-react';
+import { BookOpen, Trophy, Play, CheckCircle2, XCircle, BrainCircuit, History, Medal, UserCircle, ChevronRight, BarChart2, Star, Target, Zap, Lock, Book, Camera, ChevronLeft, Loader2, FileText, Download, Flag, LogOut, Sparkles, Youtube, ExternalLink, ArrowRight, Link, Menu, X, Home, LayoutGrid, Award, Library } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
@@ -12,6 +12,7 @@ import { DashboardLayout } from '@/layouts/DashboardLayout';
 import { SkeletonLoader } from '@/components/SkeletonLoader';
 import { AnimatedCounter } from '@/components/AnimatedCounter';
 import { useStudentStats } from '@/features/students/hooks/useStudentStats';
+import { StudentModuleHistory } from '@/features/students/components/StudentModuleHistory';
 
 // Lazy load heavy components
 const StudentReportCard = lazy(() => import('@/features/students/components/StudentReportCard').then(m => ({ default: m.StudentReportCard })));
@@ -22,7 +23,7 @@ interface Props {
   onLogout: () => void;
 }
 
-type ViewState = 'dashboard' | 'input_code' | 'study_materials' | 'quiz' | 'result' | 'profile' | 'rapor';
+type ViewState = 'dashboard' | 'input_code' | 'study_materials' | 'quiz' | 'result' | 'profile' | 'rapor' | 'modules';
 
 // Helper for UUID generation (fallback for older browsers/http)
 const generateUUID = () => {
@@ -168,6 +169,17 @@ export const StudentDashboard: React.FC<Props> = ({ session, onLogout }) => {
     setIsLoadingPacket(false);
 
     if (packet) {
+        // Status Check: Siswa hanya dapat mengerjakan paket yang berstatus ACTIVE
+        const status = packet.status || 'ACTIVE';
+        if (status === 'DRAFT') {
+            alert("Maaf, test/kuis ini belum dibuka oleh guru (Status: DRAFT).");
+            return;
+        }
+        if (status === 'COMPLETED') {
+            alert("Maaf, test/kuis ini sudah diselesaikan/ditutup oleh guru (Status: COMPLETED).");
+            return;
+        }
+
         if (packet.questions.length === 0) {
             alert("Maaf, paket soal ini belum memiliki pertanyaan.");
             return;
@@ -273,9 +285,10 @@ export const StudentDashboard: React.FC<Props> = ({ session, onLogout }) => {
     if (activePacket.modules) {
         if (mode === DifferentiationMode.CONTENT) {
             contextMsg = `Materi disesuaikan dengan hasil kuis (Level: ${result.abilityLevel})`;
-            if (result.abilityLevel === AbilityLevel.BASIC) modulesFound = activePacket.modules.basic;
-            else if (result.abilityLevel === AbilityLevel.MEDIUM) modulesFound = activePacket.modules.medium;
-            else if (result.abilityLevel === AbilityLevel.HIGH) modulesFound = activePacket.modules.high;
+            const levelStr = String(result.abilityLevel);
+            if (levelStr === AbilityLevel.BASIC || levelStr === 'Rendah' || levelStr === 'Dasar') modulesFound = activePacket.modules.basic;
+            else if (levelStr === AbilityLevel.MEDIUM || levelStr === 'Sedang') modulesFound = activePacket.modules.medium;
+            else if (levelStr === AbilityLevel.HIGH || levelStr === 'Tinggi') modulesFound = activePacket.modules.high;
         } else {
             const style = currentStyle || LearningStyle.VISUAL;
             contextMsg = `Materi disesuaikan dengan Gaya Belajarmu (${style})`;
@@ -369,6 +382,7 @@ export const StudentDashboard: React.FC<Props> = ({ session, onLogout }) => {
   const tabs = [
     { id: 'dashboard', label: 'Dashboard', icon: Home },
     { id: 'input_code', label: 'Mulai Kuis', icon: Play },
+    { id: 'modules', label: 'Modul Saya', icon: Library },
     { id: 'rapor', label: 'Rapor', icon: Award },
     { id: 'profile', label: 'Profil', icon: UserCircle }
   ];
@@ -763,6 +777,26 @@ export const StudentDashboard: React.FC<Props> = ({ session, onLogout }) => {
                   </Suspense>
               </div>
               </DashboardLayout>
+      );
+  }
+
+  // 7. MODULE HISTORY VIEW (NEW)
+  if (view === 'modules') {
+      return (
+          <DashboardLayout
+              session={session}
+              onLogout={onLogout}
+              activeTab={view}
+              setActiveTab={(id) => setView(id as any)}
+              brandName="Mimphy Siswa"
+              tabs={tabs}
+          >
+              <StudentModuleHistory
+                  results={myResults}
+                  packets={allPackets}
+                  learningStyle={currentStyle}
+              />
+          </DashboardLayout>
       );
   }
 

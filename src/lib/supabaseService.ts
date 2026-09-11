@@ -1,5 +1,6 @@
 import { supabase } from './supabaseClient';
-import { Question, QuizPacket, StudentResult, TeacherProfile, StudentProfile, Achievement, LearningStyle, DifferentiationMode, Difficulty, AchievementType } from '@/types';
+import { Question, QuizPacket, StudentResult, TeacherProfile, StudentProfile, Achievement, LearningStyle, DifferentiationMode, Difficulty, AchievementType, PacketStatus, TestStatistics } from '@/types';
+import { processTestStatistics } from './statsService';
 
 function parseTimestamp(val: any): number {
     if (!val) return Date.now();
@@ -156,7 +157,8 @@ export const SupabaseService = {
             modules: p.modules,
             learningMaterials: p.learning_materials,
             createdAt: parseTimestamp(p.created_at),
-            differentiationMode: p.differentiation_mode as DifferentiationMode
+            differentiationMode: p.differentiation_mode as DifferentiationMode,
+            status: (p.status as PacketStatus) || 'ACTIVE'
         }));
     });
   },
@@ -176,7 +178,8 @@ export const SupabaseService = {
             modules: data.modules,
             learningMaterials: data.learning_materials,
             createdAt: parseTimestamp(data.created_at),
-            differentiationMode: data.differentiation_mode as DifferentiationMode
+            differentiationMode: data.differentiation_mode as DifferentiationMode,
+            status: (data.status as PacketStatus) || 'ACTIVE'
         };
     });
   },
@@ -190,8 +193,15 @@ export const SupabaseService = {
         modules: packet.modules,
         learning_materials: packet.learningMaterials,
         created_at: packet.createdAt || Date.now(),
-        differentiation_mode: packet.differentiationMode
+        differentiation_mode: packet.differentiationMode,
+        status: packet.status || 'ACTIVE'
     });
+    if (error) throw error;
+    cache.invalidate(/packet/);
+  },
+
+  updatePacketStatus: async (packetId: string, status: PacketStatus) => {
+    const { error } = await supabase.from('packets').update({ status }).eq('id', packetId);
     if (error) throw error;
     cache.invalidate(/packet/);
   },
@@ -218,6 +228,90 @@ export const SupabaseService = {
       if (error) throw error;
       return (count || 0) > 0;
     });
+  },
+
+  // --- TEST STATISTICS & FINALIZATION ---
+  getTestStatistics: async (testId: string): Promise<TestStatistics | null> => {
+    const cacheKey = `test_stats_${testId}`;
+    return cache.fetch(cacheKey, async () => {
+      const { data, error } = await supabase.from('test_statistics').select('*').eq('test_id', testId).single();
+      if (error || !data) return null;
+      return {
+        testId: data.test_id,
+        participantCount: data.participant_count,
+        mean: Number(data.mean),
+        standardDeviation: Number(data.standard_deviation),
+        lowerThreshold: Number(data.lower_threshold),
+        upperThreshold: Number(data.upper_threshold),
+        completionMethod: data.completion_method,
+        completedAt: parseTimestamp(data.completed_at)
+      };
+    });
+  },
+
+  saveTestStatistics: async (stats: TestStatistics) => {
+    const { error } = await supabase.from('test_statistics').upsert({
+      test_id: stats.testId,
+      participant_count: stats.participantCount,
+      mean: stats.mean,
+      standard_deviation: stats.standardDeviation,
+      lower_threshold: stats.lowerThreshold,
+      upper_threshold: stats.upperThreshold,
+      completion_method: stats.completionMethod || 'manual',
+      completedAt: stats.completedAt || Date.now()
+    });
+    if (error) {
+      console.warn("Could not save to test_statistics table (it may not exist in database yet):", error);
+    }
+    cache.invalidate(/test_stats/);
+  },
+
+  finalizeTestCompletion: async (packetId: string, completionMethod: 'manual' | 'all_completed' = 'manual') => {
+    // 1. Ambil seluruh data hasil kuis untuk paket ini
+    const { data: resultsData, error: rError } = await supabase
+      .from('results')
+      .select('*')
+      .eq('packet_id', packetId);
+
+    if (rError) throw rError;
+
+    // Filter data agar 1 siswa hanya dihitung 1 kali (ambil attempt paling baru jika ada duplikat)
+    const latestStudentResultsMap = new Map<string, any>();
+    (resultsData || []).forEach((r: any) => {
+      const existing = latestStudentResultsMap.get(r.student_id);
+      if (!existing || (parseTimestamp(r.created_at || r.timestamp) > parseTimestamp(existing.created_at || existing.timestamp))) {
+        latestStudentResultsMap.set(r.student_id, r);
+      }
+    });
+
+    const validResults = Array.from(latestStudentResultsMap.values()).map((r: any) => ({
+      id: r.id,
+      studentId: r.student_id,
+      score: Number(r.score)
+    }));
+
+    // 2. Jalankan kalkulasi Azwar & Standar Deviasi
+    const outcome = processTestStatistics(packetId, validResults, completionMethod);
+
+    // 3. Ubah status paket menjadi COMPLETED
+    await supabase.from('packets').update({ status: 'COMPLETED' }).eq('id', packetId);
+
+    // 4. Simpan statistik jika ada
+    if (outcome.stats) {
+      await SupabaseService.saveTestStatistics(outcome.stats);
+    }
+
+    // 5. Update ability_level untuk setiap siswa secara permanen di database
+    for (const [resultId, newCategory] of outcome.studentCategories.entries()) {
+      await supabase.from('results').update({ ability_level: newCategory }).eq('id', resultId);
+    }
+
+    // 6. Invalidate caches
+    cache.invalidate(/packet/);
+    cache.invalidate(/results/);
+    cache.invalidate(/test_stats/);
+
+    return outcome;
   },
 
   // --- ACHIEVEMENTS ---

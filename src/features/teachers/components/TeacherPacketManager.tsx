@@ -1,8 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
-import { QuizPacket, Question, DifferentiationMode } from '@/types';
+import { QuizPacket, Question, DifferentiationMode, PacketStatus } from '@/types';
 import { SupabaseService } from '@/lib/supabaseService';
-import { Eye, Edit, Trash2, X, Save, ArrowUp, ArrowDown, AlertTriangle, Layers, BrainCircuit, CheckCircle } from 'lucide-react';
+import { Eye, Edit, Trash2, X, Save, ArrowUp, ArrowDown, AlertTriangle, Layers, BrainCircuit, CheckCircle, CheckCircle2, PlayCircle, StopCircle, Lock, Info, Loader2, RefreshCw } from 'lucide-react';
 
 interface Props {
     packets: QuizPacket[];
@@ -14,6 +14,12 @@ export const TeacherPacketManager: React.FC<Props> = ({ packets, onRefresh }) =>
     const [selectedPacket, setSelectedPacket] = useState<QuizPacket | null>(null);
     const [editData, setEditData] = useState<QuizPacket | null>(null);
     const [resultsStatus, setResultsStatus] = useState<Record<string, boolean>>({});
+
+    // Completion Modal State
+    const [showCompleteModal, setShowCompleteModal] = useState(false);
+    const [packetToComplete, setPacketToComplete] = useState<QuizPacket | null>(null);
+    const [isFinalizing, setIsFinalizing] = useState(false);
+    const [validCountInfo, setValidCountInfo] = useState<number | null>(null);
 
     useEffect(() => {
         const fetchStatuses = async () => {
@@ -27,6 +33,50 @@ export const TeacherPacketManager: React.FC<Props> = ({ packets, onRefresh }) =>
             fetchStatuses();
         }
     }, [packets]);
+
+    const handleOpenCompleteModal = async (packet: QuizPacket) => {
+        setPacketToComplete(packet);
+        try {
+            const allResults = await SupabaseService.getResults();
+            const packetResults = allResults.filter(r => r.packetId === packet.id);
+            const uniqueStudents = new Set(packetResults.map(r => r.studentId));
+            setValidCountInfo(uniqueStudents.size);
+        } catch (e) {
+            setValidCountInfo(null);
+        }
+        setShowCompleteModal(true);
+    };
+
+    const handleFinalizeTest = async () => {
+        if (!packetToComplete) return;
+        setIsFinalizing(true);
+        try {
+            const outcome = await SupabaseService.finalizeTestCompletion(packetToComplete.id, 'manual');
+            setShowCompleteModal(false);
+            setPacketToComplete(null);
+            onRefresh();
+
+            if (outcome.warningMessage) {
+                alert(`Test berhasil diselesaikan.\nCatatan: ${outcome.warningMessage}`);
+            } else {
+                alert(`Test "${packetToComplete.name}" telah COMPLETED.\nStatistik (Mean: ${outcome.stats?.mean}, SD: ${outcome.stats?.standardDeviation}) dan Kategori Siswa berhasil disimpan.`);
+            }
+        } catch (error: any) {
+            console.error("Failed to complete test:", error);
+            alert(`Gagal menyelesaikan test: ${error.message || "Terjadi kesalahan"}`);
+        } finally {
+            setIsFinalizing(false);
+        }
+    };
+
+    const handleToggleStatus = async (packetId: string, targetStatus: PacketStatus) => {
+        try {
+            await SupabaseService.updatePacketStatus(packetId, targetStatus);
+            onRefresh();
+        } catch (error: any) {
+            alert(`Gagal mengubah status paket: ${error.message || "Terjadi kesalahan"}`);
+        }
+    };
 
     // --- ACTIONS ---
     
@@ -115,7 +165,67 @@ export const TeacherPacketManager: React.FC<Props> = ({ packets, onRefresh }) =>
 
     if (view === 'list') {
         return (
-            <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 transition-colors">
+            <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 transition-colors relative">
+                
+                {/* CONFIRMATION MODAL */}
+                {showCompleteModal && packetToComplete && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in">
+                        <div className="bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full p-6 border border-slate-200 dark:border-slate-700 shadow-2xl">
+                            <div className="flex items-center justify-between mb-4 pb-3 border-b dark:border-slate-700">
+                                <h3 className="font-bold text-lg text-slate-800 dark:text-white flex items-center">
+                                    <AlertTriangle className="w-5 h-5 mr-2 text-amber-500"/>
+                                    Konfirmasi Selesaikan Test
+                                </h3>
+                                <button onClick={() => setShowCompleteModal(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                                    <X className="w-5 h-5"/>
+                                </button>
+                            </div>
+
+                            <div className="space-y-4 text-sm text-slate-700 dark:text-slate-300">
+                                <p>Apakah Anda yakin ingin menyelesaikan/menghentikan test <strong>"{packetToComplete.name}"</strong>?</p>
+                                
+                                {validCountInfo !== null && (
+                                    <div className="bg-blue-50 dark:bg-blue-900/30 p-3 rounded-xl border border-blue-100 dark:border-blue-900 text-blue-800 dark:text-blue-300 font-bold flex items-center">
+                                        <Info className="w-4 h-4 mr-2 flex-shrink-0" />
+                                        {validCountInfo} peserta memiliki hasil valid yang akan diproses.
+                                    </div>
+                                )}
+
+                                <div className="bg-slate-50 dark:bg-slate-700/50 p-4 rounded-xl space-y-2 border border-slate-200 dark:border-slate-600 text-xs">
+                                    <p className="font-bold text-slate-800 dark:text-slate-200">Setelah test diselesaikan:</p>
+                                    <ul className="list-disc ml-5 space-y-1 text-slate-600 dark:text-slate-300">
+                                        <li>Siswa <strong>tidak dapat lagi melanjutkan</strong> atau mengerjakan test ini.</li>
+                                        <li>Hasil test seluruh peserta valid akan diproses.</li>
+                                        <li>Rata-rata (μ) dan Standar Deviasi (σ) populasi akan dihitung.</li>
+                                        <li>Kategori kemampuan siswa (Rendah, Sedang, Tinggi) akan ditentukan & disimpan ke database.</li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <div className="mt-6 flex justify-end gap-3">
+                                <button
+                                    onClick={() => setShowCompleteModal(false)}
+                                    disabled={isFinalizing}
+                                    className="px-4 py-2 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg font-bold hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
+                                >
+                                    Batal
+                                </button>
+                                <button
+                                    onClick={handleFinalizeTest}
+                                    disabled={isFinalizing}
+                                    className="px-5 py-2 bg-red-600 text-white rounded-lg font-bold hover:bg-red-700 transition-colors flex items-center shadow-lg shadow-red-200 dark:shadow-none disabled:opacity-50"
+                                >
+                                    {isFinalizing ? (
+                                        <><Loader2 className="w-4 h-4 mr-2 animate-spin"/> Memproses...</>
+                                    ) : (
+                                        <><StopCircle className="w-4 h-4 mr-2"/> Selesaikan & Hitung Statistik</>
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 <h3 className="font-semibold text-lg mb-6 text-slate-800 dark:text-white">Daftar Paket Soal Saya</h3>
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm text-left min-w-[700px]">
@@ -124,7 +234,7 @@ export const TeacherPacketManager: React.FC<Props> = ({ packets, onRefresh }) =>
                                 <th className="px-6 py-3 rounded-tl-lg">Nama Paket</th>
                                 <th className="px-6 py-3">Mode Diferensiasi</th>
                                 <th className="px-6 py-3 text-center">Jml Soal</th>
-                                <th className="px-6 py-3">Status</th>
+                                <th className="px-6 py-3">Status Test</th>
                                 <th className="px-6 py-3 rounded-tr-lg text-right">Aksi</th>
                             </tr>
                         </thead>
@@ -133,10 +243,13 @@ export const TeacherPacketManager: React.FC<Props> = ({ packets, onRefresh }) =>
                                 <tr><td colSpan={5} className="text-center py-8 text-slate-400 dark:text-slate-500">Belum ada paket soal. Buat di menu "Buat Paket".</td></tr>
                             )}
                             {packets.map(p => {
-                                const hasRes = resultsStatus[p.id] || false;
+                                const status: PacketStatus = p.status || 'ACTIVE';
                                 return (
                                     <tr key={p.id} className="hover:bg-purple-50 dark:hover:bg-slate-700/50 transition-colors">
-                                        <td className="px-6 py-4 font-bold text-slate-800 dark:text-slate-200">{p.name}</td>
+                                        <td className="px-6 py-4 font-bold text-slate-800 dark:text-slate-200">
+                                            {p.name}
+                                            <div className="text-[10px] font-mono text-slate-400">ID: {p.id}</div>
+                                        </td>
                                         <td className="px-6 py-4">
                                             <span className={`flex items-center w-fit px-2 py-1 rounded-full text-xs font-bold ${p.differentiationMode === DifferentiationMode.STYLE ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400' : 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400'}`}>
                                                 {p.differentiationMode === DifferentiationMode.STYLE ? <BrainCircuit className="w-3 h-3 mr-1"/> : <Layers className="w-3 h-3 mr-1"/>}
@@ -145,14 +258,54 @@ export const TeacherPacketManager: React.FC<Props> = ({ packets, onRefresh }) =>
                                         </td>
                                         <td className="px-6 py-4 text-center font-mono text-slate-600 dark:text-slate-400">{p.questions.length}</td>
                                         <td className="px-6 py-4">
-                                            <span className={`text-xs px-2 py-1 rounded-full font-bold ${hasRes ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400'}`}>
-                                                {hasRes ? 'Aktif' : 'Draft'}
+                                            <span className={`inline-flex items-center text-xs px-2.5 py-1 rounded-full font-bold ${
+                                                status === 'COMPLETED' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800' :
+                                                status === 'ACTIVE' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800' :
+                                                'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-600'
+                                            }`}>
+                                                {status === 'COMPLETED' && <CheckCircle2 className="w-3 h-3 mr-1" />}
+                                                {status === 'ACTIVE' && <span className="w-2 h-2 rounded-full bg-green-500 mr-1.5 animate-pulse"></span>}
+                                                {status === 'DRAFT' && <Lock className="w-3 h-3 mr-1" />}
+                                                {status}
                                             </span>
                                         </td>
-                                        <td className="px-6 py-4 flex justify-end gap-2">
-                                            <button onClick={() => handleView(p)} className="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg" title="Lihat Detail"><Eye className="w-4 h-4"/></button>
-                                            <button onClick={() => handleEdit(p)} className="p-2 text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded-lg" title="Edit Paket"><Edit className="w-4 h-4"/></button>
-                                            <button onClick={() => handleDelete(p.id)} className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg" title="Hapus Paket"><Trash2 className="w-4 h-4"/></button>
+                                        <td className="px-6 py-4">
+                                            <div className="flex justify-end items-center gap-1.5">
+                                                {/* Tombol Selesaikan Test untuk Guru */}
+                                                {status === 'ACTIVE' && (
+                                                    <button
+                                                        onClick={() => handleOpenCompleteModal(p)}
+                                                        className="px-2.5 py-1.5 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-900/50 rounded-lg text-xs font-bold flex items-center transition-colors border border-red-200 dark:border-red-800"
+                                                        title="Selesaikan/Hentikan Test Ini"
+                                                    >
+                                                        <StopCircle className="w-3.5 h-3.5 mr-1" /> Selesaikan Test
+                                                    </button>
+                                                )}
+
+                                                {status === 'DRAFT' && (
+                                                    <button
+                                                        onClick={() => handleToggleStatus(p.id, 'ACTIVE')}
+                                                        className="px-2.5 py-1.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-900/50 rounded-lg text-xs font-bold flex items-center transition-colors border border-green-200 dark:border-green-800"
+                                                        title="Buka Test Untuk Siswa"
+                                                    >
+                                                        <PlayCircle className="w-3.5 h-3.5 mr-1" /> Aktifkan Test
+                                                    </button>
+                                                )}
+
+                                                {status === 'COMPLETED' && (
+                                                    <button
+                                                        onClick={() => handleToggleStatus(p.id, 'ACTIVE')}
+                                                        className="px-2 py-1 text-slate-500 hover:text-slate-700 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-xs font-semibold flex items-center"
+                                                        title="Buka Kembali Test"
+                                                    >
+                                                        <RefreshCw className="w-3 h-3 mr-1" /> Re-open
+                                                    </button>
+                                                )}
+
+                                                <button onClick={() => handleView(p)} className="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg" title="Lihat Detail"><Eye className="w-4 h-4"/></button>
+                                                <button onClick={() => handleEdit(p)} className="p-2 text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded-lg" title="Edit Paket"><Edit className="w-4 h-4"/></button>
+                                                <button onClick={() => handleDelete(p.id)} className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg" title="Hapus Paket"><Trash2 className="w-4 h-4"/></button>
+                                            </div>
                                         </td>
                                     </tr>
                                 );

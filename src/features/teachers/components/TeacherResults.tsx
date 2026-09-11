@@ -1,9 +1,10 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { StudentResult, AbilityLevel, QuizPacket, LearningStyle, StudentProfile } from '@/types';
+import { StudentResult, AbilityLevel, QuizPacket, LearningStyle, StudentProfile, PacketStatus } from '@/types';
 import { ExportService } from '@/lib/exportService';
 import { SupabaseService } from '@/lib/supabaseService';
-import { RefreshCw, Users, Filter, FileSpreadsheet, Download, X, Calendar, BrainCircuit, BarChart3, Eye, Ear, Activity } from 'lucide-react';
+import { processTestStatistics } from '@/lib/statsService';
+import { RefreshCw, Users, Filter, FileSpreadsheet, Download, X, Calendar, BrainCircuit, BarChart3, Eye, Ear, Activity, Info, AlertTriangle, CheckCircle2, Calculator } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 interface Props {
@@ -53,12 +54,32 @@ export const TeacherResults: React.FC<Props> = ({ results, packets }) => {
       });
   }, [results, filterClass, filterPacket]);
 
-  // Group students by ability level
+  // Live Calculation of Azwar Test Statistics for selected packet/results
+  const statsCalculation = useMemo(() => {
+    const validResults = filteredResults.map(r => ({
+        id: r.id,
+        studentId: r.studentId,
+        score: r.score
+    }));
+
+    return processTestStatistics(
+        filterPacket !== 'all' ? filterPacket : 'all',
+        validResults
+    );
+  }, [filteredResults, filterPacket]);
+
+  // Selected packet info if filterPacket !== 'all'
+  const selectedPacketObj = useMemo(() => {
+    if (filterPacket === 'all') return null;
+    return packets.find(p => p.id === filterPacket) || null;
+  }, [packets, filterPacket]);
+
+  // Group students by ability level (Azwar: High=Tinggi, Medium=Sedang, Basic=Rendah/Dasar)
   const groupedByAbility = useMemo(() => {
       return {
           [AbilityLevel.HIGH]: filteredResults.filter(r => r.abilityLevel === AbilityLevel.HIGH),
           [AbilityLevel.MEDIUM]: filteredResults.filter(r => r.abilityLevel === AbilityLevel.MEDIUM),
-          [AbilityLevel.BASIC]: filteredResults.filter(r => r.abilityLevel === AbilityLevel.BASIC),
+          [AbilityLevel.BASIC]: filteredResults.filter(r => r.abilityLevel === AbilityLevel.BASIC || (r.abilityLevel as string) === 'Dasar'),
       };
   }, [filteredResults]);
 
@@ -75,9 +96,9 @@ export const TeacherResults: React.FC<Props> = ({ results, packets }) => {
   const chartData = useMemo(() => {
       if (groupingMode === 'ability') {
           return [
-            { name: 'Tinggi', count: filteredResults.filter(r => r.abilityLevel === AbilityLevel.HIGH).length, color: '#22c55e' },
-            { name: 'Sedang', count: filteredResults.filter(r => r.abilityLevel === AbilityLevel.MEDIUM).length, color: '#eab308' },
-            { name: 'Dasar', count: filteredResults.filter(r => r.abilityLevel === AbilityLevel.BASIC).length, color: '#ef4444' },
+            { name: 'Tinggi', count: groupedByAbility[AbilityLevel.HIGH].length, color: '#22c55e' },
+            { name: 'Sedang', count: groupedByAbility[AbilityLevel.MEDIUM].length, color: '#eab308' },
+            { name: 'Rendah', count: groupedByAbility[AbilityLevel.BASIC].length, color: '#ef4444' },
           ];
       } else {
           return [
@@ -86,7 +107,7 @@ export const TeacherResults: React.FC<Props> = ({ results, packets }) => {
             { name: 'Kinestetik', count: groupedByStyle[LearningStyle.KINESTHETIC].length, color: '#f97316' },
           ];
       }
-  }, [filteredResults, groupingMode, groupedByStyle]);
+  }, [groupingMode, groupedByAbility, groupedByStyle]);
 
   const handleExport = () => {
       if (!exportPacketId) {
@@ -237,12 +258,23 @@ export const TeacherResults: React.FC<Props> = ({ results, packets }) => {
             </div>
         </div>
 
+        {/* Edge Case Warning Banner if present */}
+        {statsCalculation.warningMessage && (
+            <div className="bg-amber-50 dark:bg-amber-900/20 border-2 border-amber-300 dark:border-amber-700 p-4 rounded-xl flex items-start text-amber-800 dark:text-amber-200">
+                <AlertTriangle className="w-5 h-5 mr-3 flex-shrink-0 mt-0.5" />
+                <div>
+                    <h4 className="font-bold text-sm">Pemberitahuan Statistik Test</h4>
+                    <p className="text-sm mt-0.5">{statsCalculation.warningMessage}</p>
+                </div>
+            </div>
+        )}
+
         {/* Statistics Section */}
         <div className="grid md:grid-cols-3 gap-4">
             <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-stone-200 dark:border-slate-700 col-span-2 transition-colors">
                 <h3 className="font-semibold text-lg mb-6 flex items-center justify-between text-stone-800 dark:text-white">
                     <span>
-                        Distribusi {groupingMode === 'ability' ? 'Kemampuan' : 'Gaya Belajar'}
+                        Distribusi {groupingMode === 'ability' ? 'Kemampuan (Azwar SD)' : 'Gaya Belajar'}
                     </span>
                     {(filterClass !== 'all' || filterPacket !== 'all') && (
                         <span className="text-xs bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 px-2 py-1 rounded-full">
@@ -266,20 +298,64 @@ export const TeacherResults: React.FC<Props> = ({ results, packets }) => {
                     </ResponsiveContainer>
                 </div>
             </div>
-            <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-stone-200 dark:border-slate-700 transition-colors">
-                <h3 className="font-semibold text-lg mb-4 text-stone-800 dark:text-white">Ringkasan</h3>
-                <div className="space-y-4">
-                    <div className="bg-stone-50 dark:bg-slate-700/50 p-4 rounded-lg border border-stone-100 dark:border-slate-600">
-                        <p className="text-sm text-stone-500 dark:text-slate-400 font-medium">Total Siswa</p>
-                        <p className="text-3xl font-black text-stone-800 dark:text-white">{filteredResults.length}</p>
+
+            {/* Detailed Statistical Summary Card */}
+            <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-stone-200 dark:border-slate-700 transition-colors flex flex-col justify-between">
+                <div>
+                    <h3 className="font-semibold text-lg mb-4 text-stone-800 dark:text-white flex items-center justify-between">
+                        <span>Ringkasan Statistik</span>
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${
+                            selectedPacketObj?.status === 'COMPLETED' ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300' :
+                            selectedPacketObj?.status === 'DRAFT' ? 'bg-slate-100 dark:bg-slate-700 text-slate-500' :
+                            'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300'
+                        }`}>
+                            Status: {selectedPacketObj?.status || 'Active'}
+                        </span>
+                    </h3>
+                    <div className="grid grid-cols-2 gap-3 text-xs">
+                        <div className="bg-stone-50 dark:bg-slate-700/50 p-3 rounded-lg border border-stone-100 dark:border-slate-600">
+                            <p className="text-stone-500 dark:text-slate-400 font-medium">Jumlah Peserta</p>
+                            <p className="text-xl font-extrabold text-stone-800 dark:text-white">
+                                {statsCalculation.stats?.participantCount || filteredResults.length} Siswa
+                            </p>
+                        </div>
+                        <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-100 dark:border-blue-900/40">
+                            <p className="text-blue-600 dark:text-blue-400 font-medium">Mean (μ)</p>
+                            <p className="text-xl font-extrabold text-blue-700 dark:text-blue-300">
+                                {statsCalculation.stats ? statsCalculation.stats.mean : (filteredResults.length > 0 ? Math.round(filteredResults.reduce((a, b) => a + b.score, 0) / filteredResults.length) : 0)}
+                            </p>
+                        </div>
+                        <div className="bg-purple-50 dark:bg-purple-900/20 p-3 rounded-lg border border-purple-100 dark:border-purple-900/40">
+                            <p className="text-purple-600 dark:text-purple-400 font-medium">Std Deviasi (σ)</p>
+                            <p className="text-xl font-extrabold text-purple-700 dark:text-purple-300">
+                                {statsCalculation.stats ? statsCalculation.stats.standardDeviation : '-'}
+                            </p>
+                        </div>
+                        <div className="bg-emerald-50 dark:bg-emerald-900/20 p-3 rounded-lg border border-emerald-100 dark:border-emerald-900/40">
+                            <p className="text-emerald-600 dark:text-emerald-400 font-medium">Threshold (μ ± σ)</p>
+                            <p className="text-xs font-bold text-emerald-800 dark:text-emerald-200 mt-1">
+                                {statsCalculation.stats ? `${statsCalculation.stats.lowerThreshold} / ${statsCalculation.stats.upperThreshold}` : '-'}
+                            </p>
+                        </div>
                     </div>
-                    <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-100 dark:border-blue-900/40">
-                        <p className="text-sm text-blue-600 dark:text-blue-400 font-medium">Rata-rata Nilai</p>
-                        <p className="text-3xl font-black text-blue-700 dark:text-blue-300">
-                            {filteredResults.length > 0 
-                                ? Math.round(filteredResults.reduce((a, b) => a + b.score, 0) / filteredResults.length) 
-                                : 0}
-                        </p>
+                </div>
+
+                {/* Distribusi Kategori Summary */}
+                <div className="mt-4 pt-3 border-t border-stone-100 dark:border-slate-700">
+                    <p className="text-xs font-bold text-stone-500 dark:text-slate-400 mb-2">Distribusi Kategori Kemampuan:</p>
+                    <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                        <div className="bg-red-50 dark:bg-red-900/20 p-1.5 rounded-lg border border-red-100 dark:border-red-900/40">
+                            <span className="text-red-700 dark:text-red-300 block font-extrabold">{groupedByAbility[AbilityLevel.BASIC].length}</span>
+                            <span className="text-[10px] text-red-500">Rendah</span>
+                        </div>
+                        <div className="bg-yellow-50 dark:bg-yellow-900/20 p-1.5 rounded-lg border border-yellow-100 dark:border-yellow-900/40">
+                            <span className="text-yellow-700 dark:text-yellow-300 block font-extrabold">{groupedByAbility[AbilityLevel.MEDIUM].length}</span>
+                            <span className="text-[10px] text-yellow-600">Sedang</span>
+                        </div>
+                        <div className="bg-green-50 dark:bg-green-900/20 p-1.5 rounded-lg border border-green-100 dark:border-green-900/40">
+                            <span className="text-green-700 dark:text-green-300 block font-extrabold">{groupedByAbility[AbilityLevel.HIGH].length}</span>
+                            <span className="text-[10px] text-green-600">Tinggi</span>
+                        </div>
                     </div>
                 </div>
             </div>
