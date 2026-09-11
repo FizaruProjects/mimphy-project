@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { QuizPacket, Question, DifferentiationMode, PacketStatus } from '@/types';
 import { SupabaseService } from '@/lib/supabaseService';
-import { Eye, Edit, Trash2, X, Save, ArrowUp, ArrowDown, AlertTriangle, Layers, BrainCircuit, CheckCircle, CheckCircle2, PlayCircle, StopCircle, Lock, Info, Loader2, RefreshCw } from 'lucide-react';
+import { Eye, Edit, Trash2, X, Save, ArrowUp, ArrowDown, AlertTriangle, Layers, BrainCircuit, CheckCircle, CheckCircle2, PlayCircle, StopCircle, Lock, Info, Loader2, RefreshCw, Calculator } from 'lucide-react';
 
 interface Props {
     packets: QuizPacket[];
@@ -174,7 +174,7 @@ export const TeacherPacketManager: React.FC<Props> = ({ packets, onRefresh }) =>
                             <div className="flex items-center justify-between mb-4 pb-3 border-b dark:border-slate-700">
                                 <h3 className="font-bold text-lg text-slate-800 dark:text-white flex items-center">
                                     <AlertTriangle className="w-5 h-5 mr-2 text-amber-500"/>
-                                    Konfirmasi Selesaikan Test
+                                    Konfirmasi Hitung & Kategorisasi Test
                                 </h3>
                                 <button onClick={() => setShowCompleteModal(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
                                     <X className="w-5 h-5"/>
@@ -182,22 +182,21 @@ export const TeacherPacketManager: React.FC<Props> = ({ packets, onRefresh }) =>
                             </div>
 
                             <div className="space-y-4 text-sm text-slate-700 dark:text-slate-300">
-                                <p>Apakah Anda yakin ingin menyelesaikan/menghentikan test <strong>"{packetToComplete.name}"</strong>?</p>
+                                <p>Apakah Anda yakin ingin menghentikan test <strong>"{packetToComplete.name}"</strong> dan menghitung pengelompokan siswa?</p>
                                 
                                 {validCountInfo !== null && (
                                     <div className="bg-blue-50 dark:bg-blue-900/30 p-3 rounded-xl border border-blue-100 dark:border-blue-900 text-blue-800 dark:text-blue-300 font-bold flex items-center">
                                         <Info className="w-4 h-4 mr-2 flex-shrink-0" />
-                                        {validCountInfo} peserta memiliki hasil valid yang akan diproses.
+                                        {validCountInfo} peserta memiliki hasil valid yang akan dikategorisasikan.
                                     </div>
                                 )}
 
                                 <div className="bg-slate-50 dark:bg-slate-700/50 p-4 rounded-xl space-y-2 border border-slate-200 dark:border-slate-600 text-xs">
-                                    <p className="font-bold text-slate-800 dark:text-slate-200">Setelah test diselesaikan:</p>
+                                    <p className="font-bold text-slate-800 dark:text-slate-200">Setelah proses ini dijalankan:</p>
                                     <ul className="list-disc ml-5 space-y-1 text-slate-600 dark:text-slate-300">
-                                        <li>Siswa <strong>tidak dapat lagi melanjutkan</strong> atau mengerjakan test ini.</li>
-                                        <li>Hasil test seluruh peserta valid akan diproses.</li>
-                                        <li>Rata-rata (μ) dan Standar Deviasi (σ) populasi akan dihitung.</li>
-                                        <li>Kategori kemampuan siswa (Rendah, Sedang, Tinggi) akan ditentukan & disimpan ke database.</li>
+                                        <li>Siswa <strong>tidak dapat lagi mengerjakan</strong> test ini.</li>
+                                        <li>Rata-rata ($\mu$) dan Standar Deviasi ($\sigma$) populasi akan dihitung secara otomatis.</li>
+                                        <li>Kategori kemampuan siswa (Rendah, Sedang, Tinggi) dan Modul Rekomendasi akan diterbitkan untuk seluruh peserta.</li>
                                     </ul>
                                 </div>
                             </div>
@@ -213,12 +212,12 @@ export const TeacherPacketManager: React.FC<Props> = ({ packets, onRefresh }) =>
                                 <button
                                     onClick={handleFinalizeTest}
                                     disabled={isFinalizing}
-                                    className="px-5 py-2 bg-red-600 text-white rounded-lg font-bold hover:bg-red-700 transition-colors flex items-center shadow-lg shadow-red-200 dark:shadow-none disabled:opacity-50"
+                                    className="px-5 py-2 bg-amber-600 text-white rounded-lg font-bold hover:bg-amber-700 transition-colors flex items-center shadow-lg shadow-amber-200 dark:shadow-none disabled:opacity-50"
                                 >
                                     {isFinalizing ? (
                                         <><Loader2 className="w-4 h-4 mr-2 animate-spin"/> Memproses...</>
                                     ) : (
-                                        <><StopCircle className="w-4 h-4 mr-2"/> Selesaikan & Hitung Statistik</>
+                                        <><Calculator className="w-4 h-4 mr-2"/> Hitung &amp; Kategorisasi</>
                                     )}
                                 </button>
                             </div>
@@ -271,14 +270,14 @@ export const TeacherPacketManager: React.FC<Props> = ({ packets, onRefresh }) =>
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="flex justify-end items-center gap-1.5">
-                                                {/* Tombol Selesaikan Test untuk Guru */}
+                                                {/* Tombol Hitung & Kategorisasi untuk Guru */}
                                                 {status === 'ACTIVE' && (
                                                     <button
                                                         onClick={() => handleOpenCompleteModal(p)}
-                                                        className="px-2.5 py-1.5 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-900/50 rounded-lg text-xs font-bold flex items-center transition-colors border border-red-200 dark:border-red-800"
-                                                        title="Selesaikan/Hentikan Test Ini"
+                                                        className="px-2.5 py-1.5 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-900/50 rounded-lg text-xs font-bold flex items-center transition-colors border border-amber-200 dark:border-amber-800"
+                                                        title="Hitung Statistik & Kategorisasikan Siswa (SD Azwar)"
                                                     >
-                                                        <StopCircle className="w-3.5 h-3.5 mr-1" /> Selesaikan Test
+                                                        <Calculator className="w-3.5 h-3.5 mr-1" /> Hitung &amp; Kategorisasi
                                                     </button>
                                                 )}
 

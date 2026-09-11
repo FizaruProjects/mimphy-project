@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { StudentResult, QuizPacket, ModuleItem, AbilityLevel, DifferentiationMode, LearningStyle, MaterialType } from '@/types';
-import { BookOpen, FileText, Youtube, ExternalLink, Search, Calendar, Award, Sparkles, X, BrainCircuit, Layers, Filter, CheckCircle2, Link } from 'lucide-react';
+import { BookOpen, FileText, Youtube, ExternalLink, Search, Calendar, Award, Sparkles, X, BrainCircuit, Layers, Filter, CheckCircle2, Link, Clock } from 'lucide-react';
 
 interface Props {
   results: StudentResult[];
@@ -202,13 +202,19 @@ export const StudentModuleHistory: React.FC<Props> = ({ results, packets, learni
                     </div>
                     <div className="h-8 w-px bg-stone-200 dark:bg-slate-600"></div>
                     <div className="text-center">
-                      <div className={`text-base font-extrabold ${
-                        isHigh ? 'text-green-600 dark:text-green-400' :
-                        isMedium ? 'text-amber-600 dark:text-amber-400' :
-                        'text-rose-600 dark:text-rose-400'
-                      }`}>
-                        {result.abilityLevel}
-                      </div>
+                      {result.abilityLevel === 'Menunggu Finalisasi' || !result.abilityLevel ? (
+                        <div className="text-xs font-bold text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/30 px-2 py-1 rounded-lg flex items-center">
+                          <Clock className="w-3 h-3 mr-1 animate-pulse" /> Pending
+                        </div>
+                      ) : (
+                        <div className={`text-base font-extrabold ${
+                          isHigh ? 'text-green-600 dark:text-green-400' :
+                          isMedium ? 'text-amber-600 dark:text-amber-400' :
+                          'text-rose-600 dark:text-rose-400'
+                        }`}>
+                          {result.abilityLevel}
+                        </div>
+                      )}
                       <div className="text-[10px] uppercase font-bold text-stone-400 dark:text-slate-400">Kategori</div>
                     </div>
                   </div>
@@ -222,7 +228,12 @@ export const StudentModuleHistory: React.FC<Props> = ({ results, packets, learni
                     <span className="ml-2 text-xs font-medium text-stone-400 dark:text-slate-400">({contextMsg})</span>
                   </h4>
 
-                  {recommendedModules.length === 0 ? (
+                  {result.abilityLevel === 'Menunggu Finalisasi' || !result.abilityLevel ? (
+                    <div className="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-2xl text-xs text-amber-800 dark:text-amber-200 border border-amber-200 dark:border-amber-800/50 flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-amber-600 flex-shrink-0 animate-pulse" />
+                      <span>Kategorisasi kuis belum difinalisasi oleh guru. Modul rekomendasi akan terbuka secara otomatis setelah guru menekan tombol <strong>Hitung &amp; Kategorisasi</strong>.</span>
+                    </div>
+                  ) : recommendedModules.length === 0 ? (
                     <div className="bg-stone-50 dark:bg-slate-700/30 p-4 rounded-2xl text-xs text-stone-500 dark:text-slate-400 italic border border-stone-100 dark:border-slate-700">
                       Modul khusus belum diunggah untuk tingkat kemampuan ini. Materi umum kuis dapat dipelajari kembali di Ruang Belajar.
                     </div>

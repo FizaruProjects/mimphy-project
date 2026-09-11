@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UserSession, LearningStyle } from '@/types';
 import { SupabaseService } from '@/lib/supabaseService';
-import { School, User, Lock, Mail, ArrowRight, Cat, AlertCircle, UserCheck } from 'lucide-react';
+import { School, User, Lock, Mail, ArrowRight, Cat, AlertCircle, UserCheck, Loader2 } from 'lucide-react';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { SkeletonLoader } from '@/components/SkeletonLoader';
 
 interface LoginPageProps {
   onLogin: (session: UserSession) => void;
@@ -18,6 +19,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
   const [successMsg, setSuccessMsg] = useState('');
   const [formData, setFormData] = useState({ name: '', email: '', password: '', className: '', schoolName: '', learningStyle: LearningStyle.VISUAL });
   const [isLoading, setIsLoading] = useState(false);
+  const [isRedirecting, setIsRedirecting] = useState(false);
+  const [redirectMsg, setRedirectMsg] = useState('');
 
   useEffect(() => {
       // Check for Supabase auth redirects in URL hash
@@ -66,9 +69,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
         const res = await SupabaseService.loginUser(formData.email, formData.password);
         
         if (res.success && res.role) {
-            if (roleTarget === 'admin' && res.role !== 'admin') { setErrorMsg("Bukan akun admin"); return; }
-            if (roleTarget === 'teacher' && res.role !== 'teacher') { setErrorMsg("Bukan akun guru"); return; }
-            if (roleTarget === 'student' && res.role !== 'student') { setErrorMsg("Bukan akun siswa"); return; }
+            if (roleTarget === 'admin' && res.role !== 'admin') { setErrorMsg("Bukan akun admin"); setIsLoading(false); return; }
+            if (roleTarget === 'teacher' && res.role !== 'teacher') { setErrorMsg("Bukan akun guru"); setIsLoading(false); return; }
+            if (roleTarget === 'student' && res.role !== 'student') { setErrorMsg("Bukan akun siswa"); setIsLoading(false); return; }
+
+            const roleTitle = res.role === 'student' ? 'Siswa' : res.role === 'teacher' ? 'Guru' : 'Admin';
+            setRedirectMsg(`Login Berhasil! Menyiapkan Dashboard ${roleTitle}...`);
+            setIsRedirecting(true);
 
             const session: UserSession = { 
                 role: res.role, 
@@ -81,13 +88,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
             };
             
             setErrorMsg('');
-            onLogin(session);
-            
-            // Redirect based on role
-            if (res.role === 'student') navigate('/student');
-            if (res.role === 'teacher') navigate('/teacher');
-            if (res.role === 'admin') navigate('/admin');
-            
+            setTimeout(() => {
+                onLogin(session);
+                if (res.role === 'student') navigate('/student');
+                if (res.role === 'teacher') navigate('/teacher');
+                if (res.role === 'admin') navigate('/admin');
+            }, 600);
+            return;
         } else {
             setErrorMsg(res.message || 'Login gagal');
         }
@@ -97,6 +104,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
           setIsLoading(false);
       }
   };
+
+  if (isRedirecting) {
+      return <SkeletonLoader variant="splash" message={redirectMsg} />;
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 md:p-8 bg-gradient-to-br from-orange-50 via-white to-red-50 dark:from-slate-900 dark:via-red-950/20 dark:to-slate-900 transition-colors duration-500">
@@ -219,9 +230,14 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                                     else if (authMode === 'teacher_login') handleLogin('teacher');
                                     else if (authMode === 'admin') handleLogin('admin');
                                 }}
-                                className="w-full bg-red-600 text-white font-bold py-3.5 rounded-2xl hover:bg-red-700 shadow-lg shadow-red-200 dark:shadow-none mt-6 transition-all transform hover:-translate-y-1 active:translate-y-0 active:scale-95"
+                                disabled={isLoading || isRedirecting}
+                                className="w-full bg-red-600 text-white font-bold py-3.5 rounded-2xl hover:bg-red-700 shadow-lg shadow-red-200 dark:shadow-none mt-6 transition-all transform hover:-translate-y-1 active:translate-y-0 active:scale-95 disabled:opacity-50 flex items-center justify-center"
                             >
-                                Masuk Akun
+                                {isLoading ? (
+                                    <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> Memverifikasi...</>
+                                ) : (
+                                    'Masuk Akun'
+                                )}
                             </button>
                         </div>
                         

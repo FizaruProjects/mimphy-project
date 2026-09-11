@@ -14,6 +14,8 @@ import { useQuestions } from '@/hooks/useQuestions';
 import { useQuizPackets } from '@/hooks/useQuizPackets';
 import { useResults } from '@/hooks/useResults';
 
+import { SkeletonLoader } from '@/components/SkeletonLoader';
+
 interface Props {
     onLogout: () => void;
 }
@@ -21,11 +23,13 @@ interface Props {
 export const AdminDashboard: React.FC<Props> = ({ onLogout }) => {
     const [activeTab, setActiveTab] = useState<'overview' | 'teachers' | 'students' | 'analytics'>('overview');
     
-    const { data: teachers = [], refetch: refetchTeachers } = useTeachers();
-    const { data: students = [], refetch: refetchStudents } = useStudents();
-    const { data: questions = [], refetch: refetchQuestions } = useQuestions();
-    const { data: packets = [], refetch: refetchPackets } = useQuizPackets();
-    const { data: results = [], refetch: refetchResults } = useResults();
+    const { data: teachers = [], isLoading: isLoadingTeachers, refetch: refetchTeachers } = useTeachers();
+    const { data: students = [], isLoading: isLoadingStudents, refetch: refetchStudents } = useStudents();
+    const { data: questions = [], isLoading: isLoadingQuestions, refetch: refetchQuestions } = useQuestions();
+    const { data: packets = [], isLoading: isLoadingPackets, refetch: refetchPackets } = useQuizPackets();
+    const { data: results = [], isLoading: isLoadingResults, refetch: refetchResults } = useResults();
+
+    const isDataLoading = isLoadingTeachers || isLoadingStudents || isLoadingQuestions || isLoadingPackets || isLoadingResults;
 
     const [filterTime, setFilterTime] = useState<'all' | 'month' | 'week'>('all');
     
@@ -355,8 +359,12 @@ export const AdminDashboard: React.FC<Props> = ({ onLogout }) => {
                     </div>
                 )}
 
+            {isDataLoading && (
+                <SkeletonLoader variant={activeTab === 'overview' ? 'dashboard' : 'table'} />
+            )}
+
             {/* CONTENT: OVERVIEW */}
-            {activeTab === 'overview' && (
+            {activeTab === 'overview' && !isDataLoading && (
                 <div className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div className="bg-white dark:bg-slate-800 p-8 rounded-[2rem] shadow-sm border border-slate-100 dark:border-slate-700 hover:shadow-md transition-shadow">
@@ -460,7 +468,7 @@ export const AdminDashboard: React.FC<Props> = ({ onLogout }) => {
             )}
 
             {/* CONTENT: TEACHERS */}
-            {activeTab === 'teachers' && (
+            {activeTab === 'teachers' && !isDataLoading && (
                 <div className="bg-white dark:bg-slate-800 rounded-[2rem] shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
                     <div className="p-6 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50 flex flex-col md:flex-row justify-between items-center gap-4">
                         <h3 className="font-bold text-lg text-slate-800 dark:text-white">Manajemen Guru</h3>
@@ -519,7 +527,7 @@ export const AdminDashboard: React.FC<Props> = ({ onLogout }) => {
             )}
 
             {/* CONTENT: STUDENTS */}
-            {activeTab === 'students' && (
+            {activeTab === 'students' && !isDataLoading && (
                 <div className="bg-white dark:bg-slate-800 rounded-[2rem] shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
                     <div className="p-6 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50 flex flex-col md:flex-row justify-between items-center gap-4">
                         <h3 className="font-bold text-lg text-slate-800 dark:text-white">Manajemen Siswa</h3>

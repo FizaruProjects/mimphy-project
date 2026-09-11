@@ -4,18 +4,20 @@ import { StudentResult, AbilityLevel, QuizPacket, LearningStyle, StudentProfile,
 import { ExportService } from '@/lib/exportService';
 import { SupabaseService } from '@/lib/supabaseService';
 import { processTestStatistics } from '@/lib/statsService';
-import { RefreshCw, Users, Filter, FileSpreadsheet, Download, X, Calendar, BrainCircuit, BarChart3, Eye, Ear, Activity, Info, AlertTriangle, CheckCircle2, Calculator } from 'lucide-react';
+import { RefreshCw, Users, Filter, FileSpreadsheet, Download, X, Calendar, BrainCircuit, BarChart3, Eye, Ear, Activity, Info, AlertTriangle, CheckCircle2, Calculator, Loader2 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 interface Props {
   results: StudentResult[];
   packets: QuizPacket[];
+  onRefresh?: () => void;
 }
 
-export const TeacherResults: React.FC<Props> = ({ results, packets }) => {
+export const TeacherResults: React.FC<Props> = ({ results, packets, onRefresh }) => {
   const [filterClass, setFilterClass] = useState<string>('all');
   const [filterPacket, setFilterPacket] = useState<string>('all');
   const [groupingMode, setGroupingMode] = useState<'ability' | 'style'>('ability');
+  const [isFinalizing, setIsFinalizing] = useState(false);
   
   // Export Modal State
   const [showExportModal, setShowExportModal] = useState(false);
@@ -125,6 +127,31 @@ export const TeacherResults: React.FC<Props> = ({ results, packets }) => {
       ExportService.downloadExcel(packet, resultsForExport, start, end);
       setShowExportModal(false);
   };
+
+  const handleFinalizeSelectedPacket = async (packetId: string) => {
+      const pkt = packets.find(p => p.id === packetId);
+      if (!pkt) return;
+      if (!confirm(`Apakah Anda yakin ingin menghitung statistik & mengkategorisasikan siswa untuk paket "${pkt.name}"?\nSiswa tidak dapat lagi mengerjakan test ini setelah dikategorisasikan.`)) return;
+
+      setIsFinalizing(true);
+      try {
+          const outcome = await SupabaseService.finalizeTestCompletion(packetId, 'manual');
+          if (onRefresh) onRefresh();
+          if (outcome.warningMessage) {
+              alert(`Berhasil dikategorisasikan.\nCatatan: ${outcome.warningMessage}`);
+          } else {
+              alert(`Test "${pkt.name}" berhasil dikategorisasikan.\nStatistik (Mean: ${outcome.stats?.mean}, SD: ${outcome.stats?.standardDeviation}) dan Modul Rekomendasi telah diterbitkan.`);
+          }
+      } catch (err: any) {
+          alert(`Gagal mengkategorisasi: ${err.message || 'Terjadi kesalahan'}`);
+      } finally {
+          setIsFinalizing(false);
+      }
+  };
+
+  const hasPendingCategorization = useMemo(() => {
+      return filteredResults.some(r => r.abilityLevel === 'Menunggu Finalisasi' || !r.abilityLevel);
+  }, [filteredResults]);
 
   return (
     <div className="space-y-6 relative">
@@ -257,6 +284,40 @@ export const TeacherResults: React.FC<Props> = ({ results, packets }) => {
                 </button>
             </div>
         </div>
+
+        {/* Manual Categorization Prompt Banner */}
+        {((selectedPacketObj && selectedPacketObj.status !== 'COMPLETED') || hasPendingCategorization) && (
+            <div className="bg-amber-50 dark:bg-amber-900/20 border-2 border-amber-300 dark:border-amber-700 p-4 rounded-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div className="flex items-start gap-3">
+                    <Calculator className="w-6 h-6 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                    <div>
+                        <h4 className="font-bold text-amber-900 dark:text-amber-200 flex items-center">
+                            Kategorisasi Manual Oleh Guru
+                            {hasPendingCategorization && (
+                                <span className="ml-2 bg-amber-200 dark:bg-amber-800 text-amber-800 dark:text-amber-200 text-[10px] px-2 py-0.5 rounded-full font-extrabold">
+                                    Ada Siswa Menunggu
+                                </span>
+                            )}
+                        </h4>
+                        <p className="text-xs text-amber-700 dark:text-amber-300 mt-0.5">
+                            Siswa telah selesai mengerjakan test. Klik tombol di kanan untuk menghitung Rata-rata ($\mu$), Standard Deviasi ($\sigma$), dan menetapkan kelompok kemampuan (Rendah, Sedang, Tinggi) serta modul rekomendasi.
+                        </p>
+                    </div>
+                </div>
+                {selectedPacketObj ? (
+                    <button
+                        onClick={() => handleFinalizeSelectedPacket(selectedPacketObj.id)}
+                        disabled={isFinalizing}
+                        className="px-4 py-2.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl flex items-center whitespace-nowrap shadow-md disabled:opacity-50 transition-colors"
+                    >
+                        {isFinalizing ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin"/> : <Calculator className="w-4 h-4 mr-1.5"/>}
+                        Hitung &amp; Kategorisasi Test Ini
+                    </button>
+                ) : (
+                    <span className="text-xs italic text-amber-600 dark:text-amber-400">Pilih paket soal pada filter untuk mengkategorisasikan.</span>
+                )}
+            </div>
+        )}
 
         {/* Edge Case Warning Banner if present */}
         {statsCalculation.warningMessage && (
@@ -558,12 +619,13 @@ export const TeacherResults: React.FC<Props> = ({ results, packets }) => {
                                     <td className="px-6 py-3 text-slate-600 dark:text-slate-300 font-mono text-xs"><span className="bg-slate-50 dark:bg-slate-700 px-2 py-0.5 rounded">{r.packetId}</span></td>
                                     <td className="px-6 py-3 font-bold dark:text-white">{r.score}</td>
                                     <td className="px-6 py-3">
-                                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                        <span className={`px-2 py-1 rounded-full text-xs font-bold ${
                                             r.abilityLevel === AbilityLevel.HIGH ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' :
                                             r.abilityLevel === AbilityLevel.MEDIUM ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400' :
-                                            'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
+                                            (r.abilityLevel === AbilityLevel.BASIC || (r.abilityLevel as string) === 'Dasar') ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400' :
+                                            'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800'
                                         }`}>
-                                            {r.abilityLevel}
+                                            {r.abilityLevel || 'Menunggu Finalisasi'}
                                         </span>
                                     </td>
                                     <td className="px-6 py-3">

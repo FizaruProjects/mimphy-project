@@ -102,7 +102,11 @@ export const TeacherDashboard: React.FC<Props> = ({ session, onLogout }) => {
         ]}
     >
       <div className="bg-white/40 dark:bg-slate-800/40 backdrop-blur-sm rounded-[2.5rem] p-4 lg:p-8 flex-1">
-        <Suspense fallback={<SkeletonLoader />}>
+        <Suspense fallback={
+          activeTab === 'manage_packets' || activeTab === 'results' || activeTab === 'questions' || activeTab === 'student_report'
+            ? <SkeletonLoader variant="table" />
+            : <SkeletonLoader variant="dashboard" />
+        }>
           {activeTab === 'questions' && (
             <TeacherQuestionBank 
                 questions={questions} 
@@ -133,6 +137,7 @@ export const TeacherDashboard: React.FC<Props> = ({ session, onLogout }) => {
             <TeacherResults 
                 results={results} 
                 packets={packets}
+                onRefresh={refreshData}
             />
           )}
 

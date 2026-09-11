@@ -51,7 +51,7 @@ export const generateQuestionAI = async (topic: string, difficulty: string) => {
  * @param topic Topik Fisika
  * @param profile Bisa berupa AbilityLevel (untuk Content Differentiation) atau LearningStyle (untuk Style Differentiation)
  */
-export const generateLearningModule = async (topic: string, profile: AbilityLevel | LearningStyle) => {
+export const generateLearningModule = async (topic: string, profile: AbilityLevel | LearningStyle | string) => {
     const ai = getAI();
     let promptTone = "";
     

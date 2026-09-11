@@ -3,7 +3,7 @@ import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { QuizPacket, AbilityLevel, StudentResult, UserSession, Achievement, DifferentiationMode, LearningStyle, LearningMaterial, ModuleItem } from '@/types';
 import { SupabaseService } from '@/lib/supabaseService';
 import { generateLearningModule } from '@/lib/geminiService';
-import { BookOpen, Trophy, Play, CheckCircle2, XCircle, BrainCircuit, History, Medal, UserCircle, ChevronRight, BarChart2, Star, Target, Zap, Lock, Book, Camera, ChevronLeft, Loader2, FileText, Download, Flag, LogOut, Sparkles, Youtube, ExternalLink, ArrowRight, Link, Menu, X, Home, LayoutGrid, Award, Library } from 'lucide-react';
+import { BookOpen, Trophy, Play, CheckCircle2, XCircle, BrainCircuit, History, Medal, UserCircle, ChevronRight, BarChart2, Star, Target, Zap, Lock, Book, Camera, ChevronLeft, Loader2, FileText, Download, Flag, LogOut, Sparkles, Youtube, ExternalLink, ArrowRight, Link, Menu, X, Home, LayoutGrid, Award, Library, Clock } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
@@ -236,10 +236,8 @@ export const StudentDashboard: React.FC<Props> = ({ session, onLogout }) => {
 
     const finalScore = Math.round((correctCount / activePacket.questions.length) * 100);
     
-    let level = AbilityLevel.BASIC;
-    if (finalScore >= 85) level = AbilityLevel.HIGH;
-    else if (finalScore >= 70) level = AbilityLevel.MEDIUM;
-
+    // KATEGORISASI MANUAL: abilityLevel di-set ke 'Menunggu Finalisasi'
+    // Kategorisasi Azwar (Rendah, Sedang, Tinggi) baru dihitung & ditetapkan setelah guru menekan tombol Hitung & Kategorisasi
     const newResult: StudentResult = {
         id: generateUUID(),
         studentId: session.userId || 'guest',
@@ -247,7 +245,7 @@ export const StudentDashboard: React.FC<Props> = ({ session, onLogout }) => {
         className: session.className || '-',
         packetId: activePacket.id,
         score: finalScore,
-        abilityLevel: level,
+        abilityLevel: 'Menunggu Finalisasi',
         answers: boolAnswers,
         selectedIndices: userAnswers,
         attemptNumber: 0, 
@@ -310,7 +308,7 @@ export const StudentDashboard: React.FC<Props> = ({ session, onLogout }) => {
     let content = "";
     if (mode === DifferentiationMode.CONTENT) {
         contextMsg = `AI membuat modul berdasarkan hasil kuis (Level: ${result.abilityLevel})`;
-        content = await generateLearningModule(topic, result.abilityLevel);
+        content = await generateLearningModule(topic, (result.abilityLevel as string) || AbilityLevel.MEDIUM);
     } else {
         const style = currentStyle || LearningStyle.VISUAL;
         contextMsg = `AI membuat modul khusus gaya belajar ${style}`;
@@ -379,6 +377,34 @@ export const StudentDashboard: React.FC<Props> = ({ session, onLogout }) => {
   // ... (View 1: Dashboard, View 2: Input Code, View 2.5: Study Materials - Keep existing logic, only adding RenderPreviewModal)
 
 
+  const renderLoadingOverlays = () => (
+    <>
+      {isLoadingPacket && (
+        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-black/60 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-2xl flex flex-col items-center text-center max-w-sm border border-slate-200 dark:border-slate-700 animate-in zoom-in-95">
+            <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-2xl flex items-center justify-center mb-4 text-red-600 dark:text-red-400">
+              <Loader2 className="w-8 h-8 animate-spin" />
+            </div>
+            <h3 className="font-bold text-lg text-slate-800 dark:text-white mb-1">Memuat Kuis Fisika</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Memeriksa token & mengambil soal dari server...</p>
+          </div>
+        </div>
+      )}
+
+      {isSubmitting && (
+        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-black/60 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-2xl flex flex-col items-center text-center max-w-sm border border-slate-200 dark:border-slate-700 animate-in zoom-in-95">
+            <div className="w-16 h-16 bg-orange-100 dark:bg-orange-900/30 rounded-2xl flex items-center justify-center mb-4 text-orange-600 dark:text-orange-400">
+              <Loader2 className="w-8 h-8 animate-spin" />
+            </div>
+            <h3 className="font-bold text-lg text-slate-800 dark:text-white mb-1">Menyimpan Hasil Kuis</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Menghitung nilai & memproses status pengerjaan...</p>
+          </div>
+        </div>
+      )}
+    </>
+  );
+
   const tabs = [
     { id: 'dashboard', label: 'Dashboard', icon: Home },
     { id: 'input_code', label: 'Mulai Kuis', icon: Play },
@@ -398,6 +424,7 @@ export const StudentDashboard: React.FC<Props> = ({ session, onLogout }) => {
         brandName="Mimphy Siswa"
         tabs={tabs}
     >
+              {renderLoadingOverlays()}
               <div className="max-w-6xl mx-auto p-4 md:p-6 space-y-8 animate-in fade-in slide-in-from-bottom-4 flex-1 w-full">
                   {/* ... Stats & Achievement content ... */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
@@ -603,8 +630,28 @@ export const StudentDashboard: React.FC<Props> = ({ session, onLogout }) => {
                         <h2 className="text-4xl font-extrabold text-stone-800 dark:text-white mb-2">{result?.score! >= 85 ? "Fantastis!" : result?.score! >= 70 ? "Hebat!" : "Semangat!"}</h2>
                         <p className="text-stone-500 dark:text-slate-400 mb-10 font-medium">Kamu telah menyelesaikan kuis ini.</p>
                         <div className="flex flex-col md:flex-row justify-center items-center gap-6 mb-10">
-                            <div className="bg-gradient-to-br from-red-50 to-orange-50 dark:from-slate-700 dark:to-slate-800 p-6 rounded-3xl min-w-[180px] border border-red-100 dark:border-slate-600"><div className="text-6xl font-black text-red-900 dark:text-red-300 mb-2">{result?.score}</div><div className="text-xs uppercase tracking-widest font-bold text-red-400 dark:text-red-200">Nilai Akhir</div></div>
-                            <div className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-slate-700 dark:to-slate-800 p-6 rounded-3xl min-w-[180px] border border-orange-100 dark:border-slate-600"><div className={`text-3xl font-black mb-2 ${result?.abilityLevel === AbilityLevel.HIGH ? 'text-green-600 dark:text-green-400' : result?.abilityLevel === AbilityLevel.MEDIUM ? 'text-amber-600 dark:text-amber-400' : 'text-rose-600 dark:text-rose-400'}`}>{result?.abilityLevel}</div><div className="text-xs uppercase tracking-widest font-bold text-amber-500 dark:text-amber-300">Level Kamu</div></div>
+                            <div className="bg-gradient-to-br from-red-50 to-orange-50 dark:from-slate-700 dark:to-slate-800 p-6 rounded-3xl min-w-[180px] border border-red-100 dark:border-slate-600">
+                                <div className="text-6xl font-black text-red-900 dark:text-red-300 mb-2">{result?.score}</div>
+                                <div className="text-xs uppercase tracking-widest font-bold text-red-400 dark:text-red-200">Nilai Akhir</div>
+                            </div>
+                            <div className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-slate-700 dark:to-slate-800 p-6 rounded-3xl min-w-[220px] border border-orange-100 dark:border-slate-600">
+                                <div className="mb-2">
+                                    {result?.abilityLevel === 'Menunggu Finalisasi' || !result?.abilityLevel ? (
+                                        <span className="text-sm font-bold bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 px-3 py-1.5 rounded-full inline-flex items-center border border-amber-200 dark:border-amber-800">
+                                            <Clock className="w-4 h-4 mr-1.5 animate-pulse" /> Menunggu Finalisasi Guru
+                                        </span>
+                                    ) : (
+                                        <span className={`text-3xl font-black ${
+                                            result?.abilityLevel === AbilityLevel.HIGH || String(result?.abilityLevel) === 'Tinggi' ? 'text-green-600 dark:text-green-400' :
+                                            result?.abilityLevel === AbilityLevel.MEDIUM || String(result?.abilityLevel) === 'Sedang' ? 'text-amber-600 dark:text-amber-400' :
+                                            'text-rose-600 dark:text-rose-400'
+                                        }`}>
+                                            {result?.abilityLevel}
+                                        </span>
+                                    )}
+                                </div>
+                                <div className="text-xs uppercase tracking-widest font-bold text-amber-500 dark:text-amber-300">Level Kamu</div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -613,24 +660,36 @@ export const StudentDashboard: React.FC<Props> = ({ session, onLogout }) => {
                 <div className="bg-gradient-to-br from-red-600 to-orange-700 dark:from-red-900 dark:to-orange-950 p-8 md:p-12 rounded-[2.5rem] shadow-xl relative overflow-hidden text-white transition-transform hover:scale-[1.01]">
                     <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
                     <div className="relative z-10">
-                        <div className="flex flex-col md:flex-row items-start justify-between mb-8 gap-6">
-                            <div>
-                                <h3 className="text-2xl font-bold flex items-center mb-2"><Sparkles className="w-6 h-6 mr-3 text-yellow-300" /> {availableModules.length > 0 ? "Materi Rekomendasi Guru" : "Modul Pintar AI"}</h3>
-                                <p className="text-red-100 opacity-90 leading-relaxed max-w-lg">{availableModules.length > 0 ? "Gurumu sudah menyiapkan materi khusus sesuai hasilmu." : "AI telah membuatkan rangkuman materi yang PAS banget sama kamu."}</p>
-                                {moduleContext && (<span className="inline-block mt-2 text-xs bg-white/20 px-3 py-1 rounded-full font-medium">{moduleContext}</span>)}
+                        {result?.abilityLevel === 'Menunggu Finalisasi' || !result?.abilityLevel ? (
+                            <div className="bg-white/10 border border-white/20 p-8 rounded-3xl text-center">
+                                <Clock className="w-12 h-12 mx-auto mb-3 text-yellow-300 animate-pulse" />
+                                <h4 className="font-bold text-xl text-white mb-2">Menunggu Perhitungan & Kategorisasi Guru</h4>
+                                <p className="text-sm text-red-100 max-w-md mx-auto leading-relaxed">
+                                    Nilai kuis Anda telah berhasil tersimpan! Kategori kemampuan (Rendah, Sedang, Tinggi) dan modul rekomendasi akan terbuka secara otomatis setelah guru melakukan perhitungan & kategorisasi kuis ini.
+                                </p>
                             </div>
-                            {!aiModule && availableModules.length === 0 && !loadingModule && (
-                                <button onClick={loadModule} className="bg-white text-red-900 px-8 py-4 rounded-2xl text-sm font-extrabold hover:bg-stone-100 transition-all flex items-center shadow-[0_4px_0_rgb(185,28,28)] active:shadow-none active:translate-y-1 whitespace-nowrap transform hover:-translate-y-1"><Sparkles className="w-5 h-5 mr-2" /> Buka Materi Ajaib</button>
-                            )}
-                        </div>
-                        
-                        {loadingModule && <div className="py-12 text-center flex flex-col items-center animate-pulse"><Loader2 className="w-8 h-8 animate-spin text-white mb-4"/><p className="font-bold text-lg">Menyiapkan materi...</p></div>}
-                        
-                        {/* AI Content */}
-                        {aiModule && (
-                            <div className="bg-white dark:bg-slate-800 text-stone-800 dark:text-slate-200 rounded-3xl p-8 shadow-lg animate-in slide-in-from-bottom-4">
-                                <div className="prose prose-stone dark:prose-invert prose-lg max-w-none"><ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>{aiModule}</ReactMarkdown></div>
-                            </div>
+                        ) : (
+                            <>
+                                <div className="flex flex-col md:flex-row items-start justify-between mb-8 gap-6">
+                                    <div>
+                                        <h3 className="text-2xl font-bold flex items-center mb-2"><Sparkles className="w-6 h-6 mr-3 text-yellow-300" /> {availableModules.length > 0 ? "Materi Rekomendasi Guru" : "Modul Pintar AI"}</h3>
+                                        <p className="text-red-100 opacity-90 leading-relaxed max-w-lg">{availableModules.length > 0 ? "Gurumu sudah menyiapkan materi khusus sesuai hasilmu." : "AI telah membuatkan rangkuman materi yang PAS banget sama kamu."}</p>
+                                        {moduleContext && (<span className="inline-block mt-2 text-xs bg-white/20 px-3 py-1 rounded-full font-medium">{moduleContext}</span>)}
+                                    </div>
+                                    {!aiModule && availableModules.length === 0 && !loadingModule && (
+                                        <button onClick={loadModule} className="bg-white text-red-900 px-8 py-4 rounded-2xl text-sm font-extrabold hover:bg-stone-100 transition-all flex items-center shadow-[0_4px_0_rgb(185,28,28)] active:shadow-none active:translate-y-1 whitespace-nowrap transform hover:-translate-y-1"><Sparkles className="w-5 h-5 mr-2" /> Buka Materi Ajaib</button>
+                                    )}
+                                </div>
+                                
+                                {loadingModule && <div className="py-12 text-center flex flex-col items-center animate-pulse"><Loader2 className="w-8 h-8 animate-spin text-white mb-4"/><p className="font-bold text-lg">Menyiapkan materi...</p></div>}
+                                
+                                {/* AI Content */}
+                                {aiModule && (
+                                    <div className="bg-white dark:bg-slate-800 text-stone-800 dark:text-slate-200 rounded-3xl p-8 shadow-lg animate-in slide-in-from-bottom-4">
+                                        <div className="prose prose-stone dark:prose-invert prose-lg max-w-none"><ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>{aiModule}</ReactMarkdown></div>
+                                    </div>
+                                )}
+                            </>
                         )}
 
                         {/* Teacher Modules List */}
@@ -769,7 +828,7 @@ export const StudentDashboard: React.FC<Props> = ({ session, onLogout }) => {
         tabs={tabs}
     >
               <div className="w-full flex-1">
-                  <Suspense fallback={<SkeletonLoader />}>
+                  <Suspense fallback={<SkeletonLoader variant="report" />}>
                       <StudentReportCard 
                           studentId={session.userId!} 
                           onBack={goHome}
@@ -800,5 +859,5 @@ export const StudentDashboard: React.FC<Props> = ({ session, onLogout }) => {
       );
   }
 
-  return <div>Loading...</div>;
+  return <SkeletonLoader variant="dashboard" />;
 };

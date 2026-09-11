@@ -57,11 +57,7 @@ const MainApp: React.FC = () => {
   };
 
   if (isInitializing) {
-      return (
-          <div className="min-h-screen flex items-center justify-center bg-stone-50 dark:bg-slate-900">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
-          </div>
-      );
+      return <SkeletonLoader variant="splash" message="Memuat Akun & Sesi..." />;
   }
 
   return (
@@ -83,7 +79,7 @@ const MainApp: React.FC = () => {
           {/* Protected Routes for Student */}
           <Route element={<ProtectedRoute session={session} allowedRoles={['student']} />}>
             <Route path="/student" element={
-              <React.Suspense fallback={<SkeletonLoader />}>
+              <React.Suspense fallback={<SkeletonLoader variant="dashboard" />}>
                 <StudentDashboard session={session} onLogout={handleLogout} />
               </React.Suspense>
             } />
@@ -93,7 +89,7 @@ const MainApp: React.FC = () => {
           {/* Protected Routes for Teacher */}
           <Route element={<ProtectedRoute session={session} allowedRoles={['teacher']} />}>
             <Route path="/teacher" element={
-              <React.Suspense fallback={<SkeletonLoader />}>
+              <React.Suspense fallback={<SkeletonLoader variant="dashboard" />}>
                 <TeacherDashboard session={session} onLogout={handleLogout} />
               </React.Suspense>
             } />
@@ -103,7 +99,7 @@ const MainApp: React.FC = () => {
           {/* Protected Routes for Admin */}
           <Route element={<ProtectedRoute session={session} allowedRoles={['admin']} />}>
             <Route path="/admin" element={
-              <React.Suspense fallback={<SkeletonLoader />}>
+              <React.Suspense fallback={<SkeletonLoader variant="dashboard" />}>
                 <AdminDashboard onLogout={handleLogout} />
               </React.Suspense>
             } />

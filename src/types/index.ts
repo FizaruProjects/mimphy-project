@@ -152,7 +152,7 @@ export interface StudentResult {
   className: string;
   packetId: string;
   score: number;
-  abilityLevel: AbilityLevel;
+  abilityLevel: AbilityLevel | string | null; // Null / 'Menunggu Finalisasi' before teacher calculates stats
   answers: boolean[]; // True/False array
   selectedIndices: number[]; // NEW: 0=A, 1=B, etc. -1=Empty. Crucial for item analysis.
   attemptNumber: number; // NEW: Urutan percobaan ke-berapa
