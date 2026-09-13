@@ -3,6 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { QuizPacket, Question, DifferentiationMode, PacketStatus } from '@/types';
 import { SupabaseService } from '@/lib/supabaseService';
 import { Eye, Edit, Trash2, X, Save, ArrowUp, ArrowDown, AlertTriangle, Layers, BrainCircuit, CheckCircle, CheckCircle2, PlayCircle, StopCircle, Lock, Info, Loader2, RefreshCw, Calculator } from 'lucide-react';
+import MathEditor from '@/components/MathEditor';
+import MathRenderer from '@/components/MathRenderer';
 
 interface Props {
     packets: QuizPacket[];
@@ -337,13 +339,17 @@ export const TeacherPacketManager: React.FC<Props> = ({ packets, onRefresh }) =>
                                 <span className="font-bold text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-800 border dark:border-slate-600 px-2 py-0.5 rounded text-xs">Soal No. {idx + 1}</span>
                                 <span className="text-xs text-slate-400 dark:text-slate-500">{q.topic} • {q.difficulty}</span>
                             </div>
-                            <p className="font-bold text-slate-800 dark:text-slate-200 mb-3">{q.text}</p>
-                            {q.imageUrl && <img src={q.imageUrl} className="h-32 object-contain rounded border dark:border-slate-600 mb-3" />}
+                            <div className="font-bold text-slate-800 dark:text-slate-200 mb-3">
+                                <MathRenderer content={q.text} />
+                            </div>
+                            {q.imageUrl && <img src={q.imageUrl} className="h-32 object-contain rounded border dark:border-slate-600 mb-3" alt="Soal" />}
                             <div className="grid gap-2">
                                 {q.options.map((opt, oIdx) => (
                                     <div key={oIdx} className={`text-sm px-3 py-2 rounded flex items-center ${oIdx === q.correctIndex ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 font-bold border border-green-200 dark:border-green-800' : 'bg-white dark:bg-slate-800 border dark:border-slate-600 text-slate-700 dark:text-slate-300'}`}>
                                         <span className="w-6">{String.fromCharCode(65 + oIdx)}.</span>
-                                        {opt}
+                                        <div className="flex-1">
+                                            <MathRenderer content={opt} inline />
+                                        </div>
                                         {oIdx === q.correctIndex && <CheckCircle className="w-4 h-4 ml-auto"/>}
                                     </div>
                                 ))}
@@ -405,36 +411,44 @@ export const TeacherPacketManager: React.FC<Props> = ({ packets, onRefresh }) =>
                             <span className="inline-block bg-purple-600 text-white text-xs font-bold px-2 py-1 rounded mb-3">No. {idx + 1}</span>
 
                             <div className="space-y-4">
-                                <div>
-                                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1">Pertanyaan</label>
-                                    <textarea 
-                                        className="w-full p-2 border dark:border-slate-600 rounded-lg text-sm bg-white dark:bg-slate-900 text-slate-800 dark:text-white focus:ring-2 focus:ring-purple-100 outline-none"
-                                        rows={2}
-                                        value={q.text}
-                                        onChange={e => updateQuestionField(idx, 'text', e.target.value)}
-                                    />
-                                </div>
+                                <MathEditor
+                                    label="Pertanyaan"
+                                    value={q.text}
+                                    onChange={val => updateQuestionField(idx, 'text', val)}
+                                    rows={2}
+                                />
                                 
-                                <div className="grid gap-2">
+                                <div className="space-y-2">
                                     <label className="block text-xs font-bold text-slate-500 dark:text-slate-400">Pilihan Jawaban (Klik radio untuk set Kunci)</label>
                                     {q.options.map((opt, oIdx) => (
-                                        <div key={oIdx} className="flex items-center gap-2">
+                                        <div key={oIdx} className="flex items-start gap-2">
                                             <input 
                                                 type="radio" 
                                                 name={`key-${idx}`} 
                                                 checked={q.correctIndex === oIdx}
                                                 onChange={() => updateQuestionField(idx, 'correctIndex', oIdx)}
-                                                className="w-4 h-4 text-purple-600 accent-purple-600 cursor-pointer"
+                                                className="mt-3 w-4 h-4 text-purple-600 accent-purple-600 cursor-pointer"
                                             />
-                                            <span className="text-xs font-mono font-bold w-4 text-slate-600 dark:text-slate-400">{String.fromCharCode(65 + oIdx)}</span>
-                                            <input 
-                                                className={`flex-1 p-2 border dark:border-slate-600 rounded-lg text-sm outline-none bg-white dark:bg-slate-900 text-slate-800 dark:text-white ${q.correctIndex === oIdx ? 'bg-green-50 dark:bg-green-900/20 border-green-300 dark:border-green-800 font-medium' : ''}`}
-                                                value={opt}
-                                                onChange={e => updateOption(idx, oIdx, e.target.value)}
-                                            />
+                                            <div className="flex-1">
+                                                <MathEditor
+                                                    label={`Pilihan ${String.fromCharCode(65 + oIdx)}`}
+                                                    value={opt}
+                                                    onChange={val => updateOption(idx, oIdx, val)}
+                                                    isSingleLine={true}
+                                                    showPreview={false}
+                                                />
+                                            </div>
                                         </div>
                                     ))}
                                 </div>
+
+                                <MathEditor
+                                    label="Pembahasan"
+                                    value={q.explanation || ''}
+                                    onChange={val => updateQuestionField(idx, 'explanation', val)}
+                                    rows={2}
+                                    placeholder="Jelaskan langkah penyelesaian..."
+                                />
                             </div>
                         </div>
                     ))}

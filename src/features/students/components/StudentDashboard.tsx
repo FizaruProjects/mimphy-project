@@ -4,9 +4,7 @@ import { QuizPacket, AbilityLevel, StudentResult, UserSession, Achievement, Diff
 import { SupabaseService } from '@/lib/supabaseService';
 import { generateLearningModule } from '@/lib/geminiService';
 import { BookOpen, Trophy, Play, CheckCircle2, XCircle, BrainCircuit, History, Medal, UserCircle, ChevronRight, BarChart2, Star, Target, Zap, Lock, Book, Camera, ChevronLeft, Loader2, FileText, Download, Flag, LogOut, Sparkles, Youtube, ExternalLink, ArrowRight, Link, Menu, X, Home, LayoutGrid, Award, Library, Clock } from 'lucide-react';
-import ReactMarkdown from 'react-markdown';
-import remarkMath from 'remark-math';
-import rehypeKatex from 'rehype-katex';
+import MathRenderer from '@/components/MathRenderer';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { DashboardLayout } from '@/layouts/DashboardLayout';
 import { SkeletonLoader } from '@/components/SkeletonLoader';
@@ -573,12 +571,12 @@ export const StudentDashboard: React.FC<Props> = ({ session, onLogout }) => {
                     <div className="mb-6 bg-white/50 dark:bg-slate-800/50 rounded-full h-4 w-full overflow-hidden border border-white dark:border-slate-700"><div className="h-full bg-gradient-to-r from-red-400 to-orange-500 transition-all duration-500 ease-out rounded-full shadow-[0_0_10px_rgba(248,113,113,0.5)]" style={{ width: `${progress}%` }}></div></div>
                     <div className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm p-6 md:p-10 rounded-[2rem] shadow-lg border border-white dark:border-slate-700 mb-6 relative animate-in fade-in slide-in-from-right-4 duration-300" key={currentQIndex}>
                         <div className="flex justify-between items-start mb-6"><span className="inline-flex items-center bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 text-xs px-4 py-2 rounded-full font-bold uppercase tracking-wider border border-red-200 dark:border-red-800"><Zap className="w-3 h-3 mr-2 text-orange-500 fill-orange-500" />{question.topic}</span><span className="text-sm font-bold text-stone-400 dark:text-slate-500 bg-stone-50 dark:bg-slate-900 px-4 py-2 rounded-xl border border-stone-100 dark:border-slate-800">Soal {currentQIndex + 1} / {activePacket.questions.length}</span></div>
-                        <div className="text-xl md:text-2xl font-bold text-slate-800 dark:text-slate-100 mb-8 leading-relaxed prose prose-slate dark:prose-invert max-w-none">
-                            <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>{question.text}</ReactMarkdown>
+                        <div className="text-xl md:text-2xl font-bold text-slate-800 dark:text-slate-100 mb-8 leading-relaxed">
+                            <MathRenderer content={question.text} />
                         </div>
                         {question.imageUrl && (<div className="mb-8 flex justify-center bg-stone-50 dark:bg-slate-900 p-4 rounded-2xl border-2 border-dashed border-stone-200 dark:border-slate-700"><img src={question.imageUrl} alt="Ilustrasi" className="max-h-80 object-contain rounded-lg" /></div>)}
                         <div className="flex flex-col gap-3">{question.options.map((opt, idx) => (<button key={idx} onClick={() => { const newAnswers = [...userAnswers]; newAnswers[currentQIndex] = idx; setUserAnswers(newAnswers); }} className={`w-full text-left p-4 rounded-2xl border-2 transition-all duration-200 group relative transform hover:scale-[1.01] active:scale-[0.99] ${userAnswers[currentQIndex] === idx ? 'border-red-500 bg-red-50 dark:bg-red-900/30 shadow-md ring-2 ring-red-200 dark:ring-red-800' : 'border-stone-100 dark:border-slate-700 hover:border-red-300 dark:hover:border-red-500 hover:bg-white dark:hover:bg-slate-800 bg-stone-50/50 dark:bg-slate-800/50'}`}><div className="flex items-center"><span className={`w-8 h-8 flex-shrink-0 inline-flex items-center justify-center rounded-lg font-bold mr-4 transition-colors ${userAnswers[currentQIndex] === idx ? 'bg-red-600 text-white' : 'bg-white dark:bg-slate-700 text-stone-400 dark:text-slate-300 border dark:border-slate-600'}`}>{String.fromCharCode(65 + idx)}</span><span className={`text-base md:text-lg ${userAnswers[currentQIndex] === idx ? 'text-red-900 dark:text-red-200 font-bold' : 'text-stone-600 dark:text-slate-300 font-medium'}`}>
-                            <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]} components={{p: ({node, ...props}) => <span {...props} />}}>{opt}</ReactMarkdown>
+                            <MathRenderer content={opt} inline />
                         </span></div></button>))}</div>
                     </div>
                     <div className="flex flex-col md:flex-row items-center justify-between gap-4">
@@ -686,7 +684,7 @@ export const StudentDashboard: React.FC<Props> = ({ session, onLogout }) => {
                                 {/* AI Content */}
                                 {aiModule && (
                                     <div className="bg-white dark:bg-slate-800 text-stone-800 dark:text-slate-200 rounded-3xl p-8 shadow-lg animate-in slide-in-from-bottom-4">
-                                        <div className="prose prose-stone dark:prose-invert prose-lg max-w-none"><ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>{aiModule}</ReactMarkdown></div>
+                                        <div><MathRenderer content={aiModule} /></div>
                                     </div>
                                 )}
                             </>

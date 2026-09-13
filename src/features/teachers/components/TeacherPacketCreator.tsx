@@ -3,9 +3,7 @@ import React, { useState } from 'react';
 import { Question, QuizPacket, DifferentiationMode, LearningMaterial, MaterialType, PacketModules, ModuleItem } from '@/types';
 import { SupabaseService } from '@/lib/supabaseService';
 import { FileText, Image as ImageIcon, Layers, BrainCircuit, Youtube, Link, Upload, Trash2, Plus, PlayCircle, BookOpen } from 'lucide-react';
-import ReactMarkdown from 'react-markdown';
-import remarkMath from 'remark-math';
-import rehypeKatex from 'rehype-katex';
+import MathRenderer from '@/components/MathRenderer';
 
 interface Props {
   questions: Question[];
@@ -335,8 +333,8 @@ export const TeacherPacketCreator: React.FC<Props> = ({ questions, packets, onRe
                         </div>
                         <div className="flex gap-2 items-start">
                             {q.imageUrl && <ImageIcon className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />}
-                            <div className="text-sm text-stone-800 dark:text-slate-200 prose prose-sm dark:prose-invert max-w-none">
-                                <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]} components={{p: ({node, ...props}) => <span {...props} />}}>{q.text}</ReactMarkdown>
+                            <div className="text-sm text-stone-800 dark:text-slate-200 flex-1">
+                                <MathRenderer content={q.text} inline />
                             </div>
                         </div>
                     </div>

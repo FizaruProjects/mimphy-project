@@ -4,9 +4,8 @@ import { Question, Difficulty } from '@/types';
 import { SupabaseService } from '@/lib/supabaseService';
 import { generateQuestionAI } from '@/lib/geminiService';
 import { Plus, Save, Wand2, Loader2, X, Image as ImageIcon, Pencil, RotateCcw, Trash2 } from 'lucide-react';
-import ReactMarkdown from 'react-markdown';
-import remarkMath from 'remark-math';
-import rehypeKatex from 'rehype-katex';
+import MathEditor from '@/components/MathEditor';
+import MathRenderer from '@/components/MathRenderer';
 
 interface Props {
   questions: Question[];
@@ -216,32 +215,26 @@ export const TeacherQuestionBank: React.FC<Props> = ({ questions, onRefresh, tea
               </div>
           </div>
 
-          <div className="relative">
-            <label className="block text-xs font-medium text-stone-500 dark:text-slate-400 mb-1">Pertanyaan</label>
-            <textarea 
-                className="w-full p-2 border rounded-lg text-sm min-h-[80px] bg-stone-50 dark:bg-slate-900 border-stone-200 dark:border-slate-600 text-stone-800 dark:text-white outline-none focus:ring-2 focus:ring-red-400"
-                placeholder="Tulis pertanyaan di sini..."
-                value={qText}
-                onChange={e => setQText(e.target.value)}
-            />
-            <button 
-                onClick={handleGenerateAI}
-                disabled={isGenerating}
-                className="absolute top-0 right-0 m-1 text-xs bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300 px-2 py-1 rounded-md flex items-center hover:bg-red-200 dark:hover:bg-red-800 transition-colors"
-            >
-                {isGenerating ? <Loader2 className="w-3 h-3 mr-1 animate-spin"/> : <Wand2 className="w-3 h-3 mr-1"/>}
-                Buat dengan AI
-            </button>
-          </div>
-          
-          {qText && (
-            <div className="p-3 bg-stone-50 dark:bg-slate-900 rounded-lg border border-stone-200 dark:border-slate-700">
-                <p className="text-xs font-bold text-stone-500 mb-1">Preview:</p>
-                <div className="prose prose-sm dark:prose-invert max-w-none">
-                    <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>{qText}</ReactMarkdown>
-                </div>
-            </div>
-          )}
+          {/* Question Text Editor with MathEditor */}
+          <MathEditor
+            label="Pertanyaan Soal"
+            value={qText}
+            onChange={setQText}
+            rows={3}
+            placeholder="Tulis teks pertanyaan dan masukkan rumus jika ada..."
+            required
+            rightAction={
+              <button 
+                  onClick={handleGenerateAI}
+                  disabled={isGenerating}
+                  type="button"
+                  className="text-xs bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300 px-2 py-1 rounded-md flex items-center hover:bg-red-200 dark:hover:bg-red-800 transition-colors"
+              >
+                  {isGenerating ? <Loader2 className="w-3 h-3 mr-1 animate-spin"/> : <Wand2 className="w-3 h-3 mr-1"/>}
+                  Buat dengan AI
+              </button>
+            }
+          />
 
           {/* Image Upload Section */}
           <div>
@@ -271,40 +264,44 @@ export const TeacherQuestionBank: React.FC<Props> = ({ questions, onRefresh, tea
             </div>
           </div>
 
-          <div className="space-y-2">
+          {/* Options A-E Editors with MathEditor */}
+          <div className="space-y-3">
             <label className="block text-xs font-medium text-stone-500 dark:text-slate-400">Pilihan Jawaban (Pilih radio button untuk kunci)</label>
             {qOptions.map((opt, idx) => (
-                <div key={idx} className="flex items-center space-x-2">
+                <div key={idx} className="flex items-start space-x-2">
                     <input 
                         type="radio" 
                         name="correctOpt" 
                         checked={qCorrect === idx} 
                         onChange={() => setQCorrect(idx)}
-                        className="text-red-600 dark:text-red-400 dark:bg-slate-700 border-stone-300 dark:border-slate-600 focus:ring-red-500"
+                        className="mt-3 text-red-600 dark:text-red-400 dark:bg-slate-700 border-stone-300 dark:border-slate-600 focus:ring-red-500 cursor-pointer"
                     />
-                    <input 
-                        className="flex-1 p-2 border rounded-lg text-sm bg-stone-50 dark:bg-slate-900 border-stone-200 dark:border-slate-600 text-stone-800 dark:text-white outline-none focus:ring-2 focus:ring-red-400"
-                        placeholder={`Pilihan ${idx + 1}`}
+                    <div className="flex-1">
+                      <MathEditor
+                        label={`Pilihan ${String.fromCharCode(65 + idx)}`}
                         value={opt}
-                        onChange={e => {
-                            const newOpts = [...qOptions];
-                            newOpts[idx] = e.target.value;
-                            setQOptions(newOpts);
+                        onChange={(newVal) => {
+                          const newOpts = [...qOptions];
+                          newOpts[idx] = newVal;
+                          setQOptions(newOpts);
                         }}
-                    />
+                        isSingleLine={true}
+                        placeholder={`Isi opsi jawaban ${String.fromCharCode(65 + idx)}...`}
+                        showPreview={false}
+                      />
+                    </div>
                 </div>
             ))}
           </div>
 
-          <div>
-            <label className="block text-xs font-medium text-stone-500 dark:text-slate-400 mb-1">Pembahasan</label>
-            <textarea 
-                className="w-full p-2 border rounded-lg text-sm bg-stone-50 dark:bg-slate-900 border-stone-200 dark:border-slate-600 text-stone-800 dark:text-white outline-none focus:ring-2 focus:ring-red-400"
-                placeholder="Jelaskan jawaban yang benar..."
-                value={qExplanation}
-                onChange={e => setQExplanation(e.target.value)}
-            />
-          </div>
+          {/* Explanation Editor with MathEditor */}
+          <MathEditor
+            label="Pembahasan Soal"
+            value={qExplanation}
+            onChange={setQExplanation}
+            rows={2}
+            placeholder="Jelaskan langkah penyelesaian / rumus yang digunakan..."
+          />
 
           <button 
             onClick={handleSaveQuestion}
@@ -356,8 +353,8 @@ export const TeacherQuestionBank: React.FC<Props> = ({ questions, onRefresh, tea
                         {q.imageUrl && (
                             <img src={q.imageUrl} alt="Soal" className="w-16 h-16 object-cover rounded bg-stone-100 dark:bg-slate-900 border dark:border-slate-700" />
                         )}
-                        <div className="font-medium text-sm text-stone-800 dark:text-slate-200 line-clamp-2 flex-1 prose prose-sm dark:prose-invert max-w-none">
-                            <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]} components={{p: ({node, ...props}) => <span {...props} />}}>{q.text}</ReactMarkdown>
+                        <div className="font-medium text-sm text-stone-800 dark:text-slate-200 line-clamp-2 flex-1">
+                            <MathRenderer content={q.text} inline />
                         </div>
                     </div>
                 </div>
@@ -367,3 +364,4 @@ export const TeacherQuestionBank: React.FC<Props> = ({ questions, onRefresh, tea
     </div>
   );
 };
+

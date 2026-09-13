@@ -185,7 +185,7 @@ export const SupabaseService = {
   },
 
   savePacket: async (packet: QuizPacket) => {
-    const { error } = await supabase.from('packets').upsert({
+    const payload: any = {
         id: packet.id,
         teacher_id: packet.teacherId,
         name: packet.name,
@@ -195,14 +195,36 @@ export const SupabaseService = {
         created_at: packet.createdAt || Date.now(),
         differentiation_mode: packet.differentiationMode,
         status: packet.status || 'ACTIVE'
-    });
+    };
+
+    let { error } = await supabase.from('packets').upsert(payload);
+
+    // Fallback if status column is missing in Supabase DB schema
+    if (error && (error.message?.includes("'status'") || error.message?.includes('status'))) {
+        delete payload.status;
+        const fallback = await supabase.from('packets').upsert(payload);
+        error = fallback.error;
+    }
+
     if (error) throw error;
     cache.invalidate(/packet/);
   },
 
   updatePacketStatus: async (packetId: string, status: PacketStatus) => {
-    const { error } = await supabase.from('packets').update({ status }).eq('id', packetId);
-    if (error) throw error;
+    try {
+        const { error } = await supabase.from('packets').update({ status }).eq('id', packetId);
+        if (error && (error.message?.includes("'status'") || error.message?.includes('status'))) {
+            console.warn("Column 'status' does not exist in 'packets' table. Skipping status update.");
+        } else if (error) {
+            throw error;
+        }
+    } catch (err: any) {
+        if (err?.message?.includes("'status'") || err?.message?.includes('status')) {
+            console.warn("Skipping status update as column 'status' is missing in Supabase.");
+        } else {
+            throw err;
+        }
+    }
     cache.invalidate(/packet/);
   },
 
@@ -293,8 +315,12 @@ export const SupabaseService = {
     // 2. Jalankan kalkulasi Azwar & Standar Deviasi
     const outcome = processTestStatistics(packetId, validResults, completionMethod);
 
-    // 3. Ubah status paket menjadi COMPLETED
-    await supabase.from('packets').update({ status: 'COMPLETED' }).eq('id', packetId);
+    // 3. Ubah status paket menjadi COMPLETED (jika kolom status ada di Supabase)
+    try {
+      await supabase.from('packets').update({ status: 'COMPLETED' }).eq('id', packetId);
+    } catch (err) {
+      console.warn("Could not update packet status to COMPLETED:", err);
+    }
 
     // 4. Simpan statistik jika ada
     if (outcome.stats) {
