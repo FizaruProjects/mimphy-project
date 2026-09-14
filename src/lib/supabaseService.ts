@@ -474,7 +474,8 @@ export const SupabaseService = {
                 answers: r.answers,
                 selectedIndices: r.selected_indices,
                 attemptNumber: r.attempt_number,
-                timestamp: parseTimestamp(r.created_at || r.timestamp)
+                timestamp: parseTimestamp(r.created_at || r.timestamp),
+                aiFeedback: r.ai_feedback ? (typeof r.ai_feedback === 'string' ? JSON.parse(r.ai_feedback) : r.ai_feedback) : undefined
             };
         });
     });
@@ -489,7 +490,7 @@ export const SupabaseService = {
     
     const attemptNumber = (count || 0) + 1;
     
-    const { error } = await supabase.from('results').insert({
+    const payload: any = {
         id: result.id,
         student_id: result.studentId,
         packet_id: result.packetId,
@@ -498,7 +499,18 @@ export const SupabaseService = {
         answers: result.answers,
         selected_indices: result.selectedIndices,
         attempt_number: attemptNumber,
-    });
+        ai_feedback: result.aiFeedback
+    };
+    
+    let { error } = await supabase.from('results').insert(payload);
+
+    // Fallback if ai_feedback column is missing in Supabase DB schema
+    if (error && (error.message?.includes("'ai_feedback'") || error.message?.includes('ai_feedback'))) {
+        delete payload.ai_feedback;
+        const fallback = await supabase.from('results').insert(payload);
+        error = fallback.error;
+    }
+
     if (error) throw error;
     
     // Invalidate caches

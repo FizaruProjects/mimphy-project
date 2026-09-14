@@ -145,6 +145,16 @@ export interface LearningModule {
   updatedAt: number;
 }
 
+export interface AIFeedback {
+  summary: string;
+  strengths: string[];
+  areasToImprove: string[];
+  studyAdvice: string[];
+  recommendedModules: string[];
+  generatedBy: 'gemini' | 'fallback';
+  createdAt: number;
+}
+
 export interface StudentResult {
   id: string;
   studentId: string; // Relation to Student (NEW)
@@ -157,6 +167,7 @@ export interface StudentResult {
   selectedIndices: number[]; // NEW: 0=A, 1=B, etc. -1=Empty. Crucial for item analysis.
   attemptNumber: number; // NEW: Urutan percobaan ke-berapa
   timestamp: number;
+  aiFeedback?: AIFeedback;
 }
 
 export interface UserSession {

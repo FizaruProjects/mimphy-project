@@ -75,6 +75,7 @@ create table results (
   answers boolean[] not null,
   selected_indices int[] default '{}',
   attempt_number int default 1,
+  ai_feedback jsonb,
   timestamp bigint default (extract(epoch from now()) * 1000)
 );
 

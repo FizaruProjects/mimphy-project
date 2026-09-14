@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
+import { generateFallbackFeedback } from '@/services/aiFeedbackService';
 import { StudentResult, QuizPacket, ModuleItem, AbilityLevel, DifferentiationMode, LearningStyle, MaterialType } from '@/types';
-import { BookOpen, FileText, Youtube, ExternalLink, Search, Calendar, Award, Sparkles, X, BrainCircuit, Layers, Filter, CheckCircle2, Link, Clock } from 'lucide-react';
+import { BookOpen, FileText, Youtube, ExternalLink, Search, Calendar, Award, Sparkles, X, BrainCircuit, Layers, Filter, CheckCircle2, Link, Clock, Target } from 'lucide-react';
 
 interface Props {
   results: StudentResult[];
@@ -19,7 +20,7 @@ export const StudentModuleHistory: React.FC<Props> = ({ results, packets, learni
     return sortedResults.map(res => {
       const packet = packets.find(p => p.id === res.packetId);
       const mode = packet?.differentiationMode || DifferentiationMode.CONTENT;
-      
+
       let recommendedModules: ModuleItem[] = [];
       let contextMsg = "";
 
@@ -61,7 +62,7 @@ export const StudentModuleHistory: React.FC<Props> = ({ results, packets, learni
   const filteredEntries = useMemo(() => {
     if (!searchTerm.trim()) return moduleHistoryEntries;
     const term = searchTerm.toLowerCase();
-    return moduleHistoryEntries.filter(entry => 
+    return moduleHistoryEntries.filter(entry =>
       entry.packetName.toLowerCase().includes(term) ||
       entry.result.packetId.toLowerCase().includes(term) ||
       String(entry.result.abilityLevel).toLowerCase().includes(term)
@@ -74,8 +75,8 @@ export const StudentModuleHistory: React.FC<Props> = ({ results, packets, learni
       const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
       const match = url.match(regExp);
       return (match && match[2].length === 11) ? `https://www.youtube.com/embed/${match[2]}` : null;
-    } catch(e) { 
-      return null; 
+    } catch (e) {
+      return null;
     }
   };
 
@@ -87,15 +88,15 @@ export const StudentModuleHistory: React.FC<Props> = ({ results, packets, learni
         <div className="bg-white dark:bg-slate-900 w-full max-w-4xl h-[80vh] rounded-2xl overflow-hidden flex flex-col relative" onClick={e => e.stopPropagation()}>
           <div className="p-4 border-b dark:border-slate-700 flex justify-between items-center bg-stone-50 dark:bg-slate-800">
             <h3 className="font-bold text-lg text-stone-800 dark:text-white truncate pr-4">{selectedMaterial.title}</h3>
-            <button onClick={() => setSelectedMaterial(null)} className="p-2 bg-stone-200 dark:bg-slate-700 rounded-full hover:bg-stone-300 dark:hover:bg-slate-600"><X className="w-5 h-5"/></button>
+            <button onClick={() => setSelectedMaterial(null)} className="p-2 bg-stone-200 dark:bg-slate-700 rounded-full hover:bg-stone-300 dark:hover:bg-slate-600"><X className="w-5 h-5" /></button>
           </div>
           <div className="flex-1 bg-black flex items-center justify-center overflow-auto">
             {selectedMaterial.type === 'video_link' ? (
               getYoutubeEmbedUrl(selectedMaterial.content) ? (
-                <iframe 
-                  src={getYoutubeEmbedUrl(selectedMaterial.content)!} 
-                  className="w-full h-full" 
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                <iframe
+                  src={getYoutubeEmbedUrl(selectedMaterial.content)!}
+                  className="w-full h-full"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   allowFullScreen
                 ></iframe>
               ) : (
@@ -127,9 +128,7 @@ export const StudentModuleHistory: React.FC<Props> = ({ results, packets, learni
       <div className="bg-gradient-to-r from-red-600 via-orange-600 to-amber-600 rounded-[2.5rem] p-6 md:p-10 text-white shadow-xl relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
         <div className="relative z-10">
-          <div className="inline-flex items-center bg-white/20 backdrop-blur-md px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider mb-4 border border-white/30">
-            <Sparkles className="w-4 h-4 mr-2 text-yellow-300" /> Perpustakaan Modul Saya
-          </div>
+
           <h2 className="text-2xl md:text-3xl font-extrabold mb-2">Riwayat Rekomendasi Modul</h2>
           <p className="text-red-100 text-sm md:text-base max-w-2xl leading-relaxed">
             Semua modul pembelajaran yang pernah direkomendasikan berdasarkan hasil kuis Anda tersimpan disini secara permanen. Anda dapat membaca dan mempelajari kembali materi kapan saja!
@@ -141,8 +140,8 @@ export const StudentModuleHistory: React.FC<Props> = ({ results, packets, learni
       <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-stone-200 dark:border-slate-700 flex flex-col md:flex-row justify-between items-center gap-4 transition-colors">
         <div className="relative w-full md:w-96">
           <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400 dark:text-slate-400" />
-          <input 
-            type="text" 
+          <input
+            type="text"
             placeholder="Cari modul berdasarkan paket..."
             className="w-full pl-10 pr-4 py-2.5 bg-stone-50 dark:bg-slate-900 border border-stone-200 dark:border-slate-700 rounded-xl text-sm font-medium text-stone-800 dark:text-white outline-none focus:ring-2 focus:ring-red-400"
             value={searchTerm}
@@ -170,6 +169,16 @@ export const StudentModuleHistory: React.FC<Props> = ({ results, packets, learni
             const isHigh = levelStr === AbilityLevel.HIGH || levelStr === 'Tinggi';
             const isMedium = levelStr === AbilityLevel.MEDIUM || levelStr === 'Sedang';
 
+            const displayFeedback = result.aiFeedback || generateFallbackFeedback({
+              score: result.score,
+              abilityLevel: String(result.abilityLevel || (result.score >= 85 ? 'Tinggi' : result.score < 60 ? 'Rendah' : 'Sedang')),
+              packetName: packetName,
+              testTopic: 'Fisika SMA',
+              masteredIndicators: [],
+              unmasteredIndicators: [],
+              indicatorStats: []
+            });
+
             return (
               <div key={result.id || idx} className="bg-white dark:bg-slate-800 rounded-3xl p-6 md:p-8 shadow-sm border border-stone-200 dark:border-slate-700 hover:shadow-md transition-all">
                 {/* Card Top Info */}
@@ -179,12 +188,11 @@ export const StudentModuleHistory: React.FC<Props> = ({ results, packets, learni
                       <span className="text-xs font-mono bg-stone-100 dark:bg-slate-700 text-stone-600 dark:text-slate-300 px-2.5 py-0.5 rounded-full font-bold">
                         {result.packetId}
                       </span>
-                      <span className={`inline-flex items-center text-xs px-2.5 py-0.5 rounded-full font-bold ${
-                        differentiationMode === DifferentiationMode.STYLE 
-                          ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400' 
-                          : 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400'
-                      }`}>
-                        {differentiationMode === DifferentiationMode.STYLE ? <BrainCircuit className="w-3 h-3 mr-1"/> : <Layers className="w-3 h-3 mr-1"/>}
+                      <span className={`inline-flex items-center text-xs px-2.5 py-0.5 rounded-full font-bold ${differentiationMode === DifferentiationMode.STYLE
+                        ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400'
+                        : 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400'
+                        }`}>
+                        {differentiationMode === DifferentiationMode.STYLE ? <BrainCircuit className="w-3 h-3 mr-1" /> : <Layers className="w-3 h-3 mr-1" />}
                         {differentiationMode === DifferentiationMode.STYLE ? 'Gaya Belajar' : 'Level Konten'}
                       </span>
                       <span className="text-xs text-stone-400 dark:text-slate-500 flex items-center">
@@ -207,11 +215,10 @@ export const StudentModuleHistory: React.FC<Props> = ({ results, packets, learni
                           <Clock className="w-3 h-3 mr-1 animate-pulse" /> Pending
                         </div>
                       ) : (
-                        <div className={`text-base font-extrabold ${
-                          isHigh ? 'text-green-600 dark:text-green-400' :
+                        <div className={`text-base font-extrabold ${isHigh ? 'text-green-600 dark:text-green-400' :
                           isMedium ? 'text-amber-600 dark:text-amber-400' :
-                          'text-rose-600 dark:text-rose-400'
-                        }`}>
+                            'text-rose-600 dark:text-rose-400'
+                          }`}>
                           {result.abilityLevel}
                         </div>
                       )}
@@ -224,7 +231,7 @@ export const StudentModuleHistory: React.FC<Props> = ({ results, packets, learni
                 <div>
                   <h4 className="text-sm font-bold text-stone-700 dark:text-slate-200 mb-3 flex items-center">
                     <BookOpen className="w-4 h-4 mr-2 text-red-600 dark:text-red-400" />
-                    Modul Rekomendasi 
+                    Modul Rekomendasi
                     <span className="ml-2 text-xs font-medium text-stone-400 dark:text-slate-400">({contextMsg})</span>
                   </h4>
 
@@ -242,12 +249,11 @@ export const StudentModuleHistory: React.FC<Props> = ({ results, packets, learni
                       {recommendedModules.map(item => (
                         <div key={item.id} className="bg-stone-50 dark:bg-slate-700/40 p-4 rounded-2xl border border-stone-100 dark:border-slate-600 hover:border-red-300 dark:hover:border-red-500 transition-colors flex items-center justify-between gap-3 group">
                           <div className="flex items-center gap-3 min-w-0">
-                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
-                              item.type === 'video_link' ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400' :
+                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${item.type === 'video_link' ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400' :
                               item.type === 'pdf_upload' ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' :
-                              'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400'
-                            }`}>
-                              {item.type === 'video_link' ? <Youtube className="w-5 h-5"/> : item.type === 'pdf_upload' ? <FileText className="w-5 h-5"/> : <ExternalLink className="w-5 h-5"/>}
+                                'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400'
+                              }`}>
+                              {item.type === 'video_link' ? <Youtube className="w-5 h-5" /> : item.type === 'pdf_upload' ? <FileText className="w-5 h-5" /> : <ExternalLink className="w-5 h-5" />}
                             </div>
                             <div className="min-w-0">
                               <h5 className="font-bold text-sm text-stone-800 dark:text-white truncate">{item.title}</h5>
@@ -268,6 +274,85 @@ export const StudentModuleHistory: React.FC<Props> = ({ results, packets, learni
                     </div>
                   )}
                 </div>
+
+                {/* Saved AI Diagnostic Feedback */}
+                {displayFeedback && (
+                  <div className="mt-6 pt-6 border-t border-stone-100 dark:border-slate-700 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-sm font-bold text-stone-800 dark:text-white flex items-center">
+                        <BrainCircuit className="w-4 h-4 mr-2 text-orange-500" />
+                        AI Diagnostic Feedback
+                        <Sparkles className="w-3.5 h-3.5 ml-1.5 text-amber-500 fill-amber-500" />
+                      </h4>
+                      <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${
+                        displayFeedback.generatedBy === 'gemini'
+                          ? 'bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800'
+                          : 'bg-stone-100 dark:bg-slate-700 text-stone-600 dark:text-slate-300 border-stone-200 dark:border-slate-600'
+                      }`}>
+                        {displayFeedback.generatedBy === 'gemini' ? '✨ Gemini AI' : '⚡ Diagnostic Mimphy'}
+                      </span>
+                    </div>
+
+                    {/* Ringkasan */}
+                    <div className="bg-orange-50/60 dark:bg-slate-700/40 p-4 rounded-2xl border border-orange-100 dark:border-slate-600 text-xs text-stone-700 dark:text-slate-300 leading-relaxed font-medium">
+                      <span className="font-bold text-red-900 dark:text-red-300 block mb-1">Ringkasan:</span>
+                      {displayFeedback.summary}
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                      {/* Kekuatan */}
+                      {displayFeedback.strengths && displayFeedback.strengths.length > 0 && (
+                        <div className="bg-emerald-50/60 dark:bg-emerald-950/20 p-3.5 rounded-xl border border-emerald-100 dark:border-emerald-900/30">
+                          <span className="font-bold text-emerald-900 dark:text-emerald-300 flex items-center mb-1.5">
+                            <CheckCircle2 className="w-3.5 h-3.5 mr-1 text-emerald-600" /> Kekuatan Siswa
+                          </span>
+                          <ul className="space-y-1 text-emerald-800 dark:text-emerald-200">
+                            {displayFeedback.strengths.map((item, i) => (
+                              <li key={i} className="flex items-start">
+                                <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1.5 mr-1.5 flex-shrink-0"></span>
+                                <span>{item}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {/* Area Perbaikan */}
+                      {displayFeedback.areasToImprove && displayFeedback.areasToImprove.length > 0 && (
+                        <div className="bg-amber-50/60 dark:bg-amber-950/20 p-3.5 rounded-xl border border-amber-100 dark:border-amber-900/30">
+                          <span className="font-bold text-amber-900 dark:text-amber-300 flex items-center mb-1.5">
+                            <Target className="w-3.5 h-3.5 mr-1 text-amber-600" /> Area yang Perlu Diperbaiki
+                          </span>
+                          <ul className="space-y-1 text-amber-800 dark:text-amber-200">
+                            {displayFeedback.areasToImprove.map((item, i) => (
+                              <li key={i} className="flex items-start">
+                                <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-500 mt-1.5 mr-1.5 flex-shrink-0"></span>
+                                <span>{item}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Saran Belajar */}
+                    {displayFeedback.studyAdvice && displayFeedback.studyAdvice.length > 0 && (
+                      <div className="bg-blue-50/60 dark:bg-blue-950/20 p-3.5 rounded-xl border border-blue-100 dark:border-blue-900/30 text-xs">
+                        <span className="font-bold text-blue-900 dark:text-blue-300 flex items-center mb-1.5">
+                          <BookOpen className="w-3.5 h-3.5 mr-1 text-blue-600" /> Saran Belajar Konkret
+                        </span>
+                        <ul className="space-y-1 text-blue-800 dark:text-blue-200">
+                          {displayFeedback.studyAdvice.map((item, i) => (
+                            <li key={i} className="flex items-start">
+                              <span className="font-bold text-blue-600 dark:text-blue-400 mr-1.5">{i + 1}.</span>
+                              <span>{item}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             );
           })
