@@ -12,6 +12,8 @@ import { SkeletonLoader } from '@/components/SkeletonLoader';
 import { AnimatedCounter } from '@/components/AnimatedCounter';
 import { useStudentStats } from '@/features/students/hooks/useStudentStats';
 import { StudentModuleHistory } from '@/features/students/components/StudentModuleHistory';
+import { RecommendedModulesSection } from './RecommendedModulesSection';
+import { ExpandableText } from '@/components/ExpandableText';
 
 // Lazy load heavy components
 const StudentReportCard = lazy(() => import('@/features/students/components/StudentReportCard').then(m => ({ default: m.StudentReportCard })));
@@ -772,8 +774,9 @@ export const StudentDashboard: React.FC<Props> = ({ session, onLogout }) => {
                                         <Target className="w-4 h-4 mr-2 text-red-500" /> Ringkasan Hasil Asesmen
                                     </h4>
                                     <p className="text-sm text-stone-700 dark:text-slate-300 leading-relaxed font-medium">
-                                        {displayFeedback.summary}
+                                        <ExpandableText text={displayFeedback.summary} maxLength={160} buttonClassName="text-red-600 dark:text-red-400 font-bold hover:underline" />
                                     </p>
+
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -786,10 +789,11 @@ export const StudentDashboard: React.FC<Props> = ({ session, onLogout }) => {
                                             {displayFeedback.strengths.map((item, i) => (
                                                 <li key={i} className="text-xs md:text-sm text-emerald-800 dark:text-emerald-200 flex items-start">
                                                     <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 mt-2 mr-2 flex-shrink-0"></span>
-                                                    <span>{item}</span>
+                                                    <ExpandableText text={item} maxLength={120} buttonClassName="text-emerald-700 dark:text-emerald-300 font-bold hover:underline" />
                                                 </li>
                                             ))}
                                         </ul>
+
                                     </div>
 
                                     {/* 3. Indikator yang Perlu Diperbaiki */}
@@ -801,10 +805,11 @@ export const StudentDashboard: React.FC<Props> = ({ session, onLogout }) => {
                                             {displayFeedback.areasToImprove.map((item, i) => (
                                                 <li key={i} className="text-xs md:text-sm text-amber-800 dark:text-amber-200 flex items-start">
                                                     <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-500 mt-2 mr-2 flex-shrink-0"></span>
-                                                    <span>{item}</span>
+                                                    <ExpandableText text={item} maxLength={120} buttonClassName="text-amber-700 dark:text-amber-300 font-bold hover:underline" />
                                                 </li>
                                             ))}
                                         </ul>
+
                                     </div>
                                 </div>
 
@@ -817,10 +822,11 @@ export const StudentDashboard: React.FC<Props> = ({ session, onLogout }) => {
                                         {displayFeedback.studyAdvice.map((item, i) => (
                                             <li key={i} className="text-xs md:text-sm text-blue-800 dark:text-blue-200 flex items-start">
                                                 <span className="font-bold text-blue-600 dark:text-blue-400 mr-2">{i + 1}.</span>
-                                                <span>{item}</span>
+                                                <ExpandableText text={item} maxLength={120} buttonClassName="text-blue-700 dark:text-blue-300 font-bold hover:underline" />
                                             </li>
                                         ))}
                                     </ul>
+
                                 </div>
 
                                 {/* 5. Rekomendasi Modul yang Sesuai */}

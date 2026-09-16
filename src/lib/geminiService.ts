@@ -28,7 +28,7 @@ export const generateQuestionAI = async (topic: string, difficulty: string) => {
                     type: Type.OBJECT,
                     properties: {
                         text: { type: Type.STRING },
-                        options: { 
+                        options: {
                             type: Type.ARRAY,
                             items: { type: Type.STRING }
                         },
@@ -54,7 +54,7 @@ export const generateQuestionAI = async (topic: string, difficulty: string) => {
 export const generateLearningModule = async (topic: string, profile: AbilityLevel | LearningStyle | string) => {
     const ai = getAI();
     let promptTone = "";
-    
+
     // Cek apakah parameter adalah AbilityLevel
     if (Object.values(AbilityLevel).includes(profile as AbilityLevel)) {
         switch (profile) {
@@ -68,7 +68,7 @@ export const generateLearningModule = async (topic: string, profile: AbilityLeve
                 promptTone = "Berikan materi pengayaan yang menantang, implikasi lanjut dari konsep ini, dan soal HOTS (Higher Order Thinking Skills).";
                 break;
         }
-    } 
+    }
     // Jika bukan AbilityLevel, asumsikan LearningStyle
     else {
         switch (profile) {

@@ -1,7 +1,10 @@
 import React, { useState, useMemo } from 'react';
 import { generateFallbackFeedback } from '@/services/aiFeedbackService';
 import { StudentResult, QuizPacket, ModuleItem, AbilityLevel, DifferentiationMode, LearningStyle, MaterialType } from '@/types';
-import { BookOpen, FileText, Youtube, ExternalLink, Search, Calendar, Award, Sparkles, X, BrainCircuit, Layers, Filter, CheckCircle2, Link, Clock, Target } from 'lucide-react';
+import { BookOpen, FileText, Youtube, ExternalLink, Search, Calendar, Award, Sparkles, X, BrainCircuit, Layers, Filter, CheckCircle2, Link, Clock, Target, ChevronDown, ChevronUp, ChevronsUpDown } from 'lucide-react';
+import { RecommendedModulesSection } from './RecommendedModulesSection';
+import { ExpandableText } from '@/components/ExpandableText';
+
 
 interface Props {
   results: StudentResult[];
@@ -12,6 +15,8 @@ interface Props {
 export const StudentModuleHistory: React.FC<Props> = ({ results, packets, learningStyle }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedMaterial, setSelectedMaterial] = useState<ModuleItem | null>(null);
+  const [expandedIds, setExpandedIds] = useState<Record<string, boolean>>({});
+
 
   // Map each result to its associated packet & recommended modules
   const moduleHistoryEntries = useMemo(() => {
@@ -57,6 +62,35 @@ export const StudentModuleHistory: React.FC<Props> = ({ results, packets, learni
       };
     });
   }, [results, packets, learningStyle]);
+
+  const isCardExpanded = (id: string, isFirst: boolean) => {
+    if (expandedIds[id] !== undefined) {
+      return expandedIds[id];
+    }
+    return isFirst;
+  };
+
+  const toggleCard = (id: string, isFirst: boolean) => {
+    setExpandedIds(prev => ({
+      ...prev,
+      [id]: !(prev[id] !== undefined ? prev[id] : isFirst)
+    }));
+  };
+
+  const allExpanded = useMemo(() => {
+    if (moduleHistoryEntries.length === 0) return false;
+    return moduleHistoryEntries.every(({ result }, idx) => isCardExpanded(result.id || String(idx), idx === 0));
+  }, [moduleHistoryEntries, expandedIds]);
+
+  const toggleAllCards = () => {
+    const nextState = !allExpanded;
+    const newMap: Record<string, boolean> = {};
+    moduleHistoryEntries.forEach(({ result }, idx) => {
+      newMap[result.id || String(idx)] = nextState;
+    });
+    setExpandedIds(newMap);
+  };
+
 
   // Filter history entries by search query
   const filteredEntries = useMemo(() => {
@@ -148,9 +182,21 @@ export const StudentModuleHistory: React.FC<Props> = ({ results, packets, learni
             onChange={e => setSearchTerm(e.target.value)}
           />
         </div>
-        <div className="text-xs font-bold text-stone-500 dark:text-slate-400">
-          Total Riwayat: <span className="text-red-600 dark:text-red-400 font-extrabold text-sm ml-1">{filteredEntries.length} Paket</span>
+        <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end">
+          <div className="text-xs font-bold text-stone-500 dark:text-slate-400">
+            Total Riwayat: <span className="text-red-600 dark:text-red-400 font-extrabold text-sm ml-1">{filteredEntries.length} Paket</span>
+          </div>
+          {filteredEntries.length > 0 && (
+            <button
+              onClick={toggleAllCards}
+              className="inline-flex items-center text-xs font-bold text-stone-700 dark:text-slate-200 bg-stone-100 dark:bg-slate-700/70 hover:bg-stone-200 dark:hover:bg-slate-600 px-3 py-2 rounded-xl transition-colors shadow-sm focus:outline-none"
+            >
+              <ChevronsUpDown className="w-3.5 h-3.5 mr-1.5 text-red-600 dark:text-red-400" />
+              {allExpanded ? 'Tutup Semua' : 'Buka Semua'}
+            </button>
+          )}
         </div>
+
       </div>
 
       {/* Module History List */}
@@ -179,10 +225,13 @@ export const StudentModuleHistory: React.FC<Props> = ({ results, packets, learni
               indicatorStats: []
             });
 
+            const cardId = result.id || String(idx);
+            const isOpen = isCardExpanded(cardId, idx === 0);
+
             return (
-              <div key={result.id || idx} className="bg-white dark:bg-slate-800 rounded-3xl p-6 md:p-8 shadow-sm border border-stone-200 dark:border-slate-700 hover:shadow-md transition-all">
+              <div key={cardId} className="bg-white dark:bg-slate-800 rounded-3xl p-6 md:p-8 shadow-sm border border-stone-200 dark:border-slate-700 hover:shadow-md transition-all">
                 {/* Card Top Info */}
-                <div className="flex flex-col md:flex-row md:items-center justify-between pb-6 mb-6 border-b border-stone-100 dark:border-slate-700 gap-4">
+                <div className={`flex flex-col md:flex-row md:items-center justify-between gap-4 ${isOpen ? 'pb-6 mb-6 border-b border-stone-100 dark:border-slate-700' : ''}`}>
                   <div>
                     <div className="flex items-center gap-2 mb-2 flex-wrap">
                       <span className="text-xs font-mono bg-stone-100 dark:bg-slate-700 text-stone-600 dark:text-slate-300 px-2.5 py-0.5 rounded-full font-bold">
@@ -203,152 +252,172 @@ export const StudentModuleHistory: React.FC<Props> = ({ results, packets, learni
                     <h3 className="text-xl font-bold text-stone-800 dark:text-white">{packetName}</h3>
                   </div>
 
-                  <div className="flex items-center gap-4 bg-stone-50 dark:bg-slate-700/50 p-3 rounded-2xl border border-stone-100 dark:border-slate-600 w-fit">
-                    <div className="text-center">
-                      <div className="text-2xl font-black text-stone-800 dark:text-white">{result.score}</div>
-                      <div className="text-[10px] uppercase font-bold text-stone-400 dark:text-slate-400">Nilai</div>
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-4 bg-stone-50 dark:bg-slate-700/50 p-3 rounded-2xl border border-stone-100 dark:border-slate-600 w-fit">
+                      <div className="text-center">
+                        <div className="text-2xl font-black text-stone-800 dark:text-white">{result.score}</div>
+                        <div className="text-[10px] uppercase font-bold text-stone-400 dark:text-slate-400">Nilai</div>
+                      </div>
+                      <div className="h-8 w-px bg-stone-200 dark:bg-slate-600"></div>
+                      <div className="text-center">
+                        {result.abilityLevel === 'Menunggu Finalisasi' || !result.abilityLevel ? (
+                          <div className="text-xs font-bold text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/30 px-2 py-1 rounded-lg flex items-center">
+                            <Clock className="w-3 h-3 mr-1 animate-pulse" /> Pending
+                          </div>
+                        ) : (
+                          <div className={`text-base font-extrabold ${isHigh ? 'text-green-600 dark:text-green-400' :
+                            isMedium ? 'text-amber-600 dark:text-amber-400' :
+                              'text-rose-600 dark:text-rose-400'
+                            }`}>
+                            {result.abilityLevel}
+                          </div>
+                        )}
+                        <div className="text-[10px] uppercase font-bold text-stone-400 dark:text-slate-400">Kategori</div>
+                      </div>
                     </div>
-                    <div className="h-8 w-px bg-stone-200 dark:bg-slate-600"></div>
-                    <div className="text-center">
-                      {result.abilityLevel === 'Menunggu Finalisasi' || !result.abilityLevel ? (
-                        <div className="text-xs font-bold text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/30 px-2 py-1 rounded-lg flex items-center">
-                          <Clock className="w-3 h-3 mr-1 animate-pulse" /> Pending
-                        </div>
-                      ) : (
-                        <div className={`text-base font-extrabold ${isHigh ? 'text-green-600 dark:text-green-400' :
-                          isMedium ? 'text-amber-600 dark:text-amber-400' :
-                            'text-rose-600 dark:text-rose-400'
-                          }`}>
-                          {result.abilityLevel}
-                        </div>
-                      )}
-                      <div className="text-[10px] uppercase font-bold text-stone-400 dark:text-slate-400">Kategori</div>
-                    </div>
+
+                    <button
+                      onClick={() => toggleCard(cardId, idx === 0)}
+                      className="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-2xl text-xs font-bold text-stone-700 dark:text-slate-200 bg-stone-100 dark:bg-slate-700/80 hover:bg-stone-200 dark:hover:bg-slate-600 transition-colors border border-stone-200 dark:border-slate-600 shadow-sm"
+                      aria-expanded={isOpen}
+                    >
+                      <span>{isOpen ? 'Ringkas' : 'Detail'}</span>
+                      {isOpen ? <ChevronUp className="w-4 h-4 text-red-500" /> : <ChevronDown className="w-4 h-4 text-stone-500 dark:text-slate-400" />}
+                    </button>
                   </div>
                 </div>
 
-                {/* Recommended Modules Content */}
-                <div>
-                  <h4 className="text-sm font-bold text-stone-700 dark:text-slate-200 mb-3 flex items-center">
-                    <BookOpen className="w-4 h-4 mr-2 text-red-600 dark:text-red-400" />
-                    Modul Rekomendasi
-                    <span className="ml-2 text-xs font-medium text-stone-400 dark:text-slate-400">({contextMsg})</span>
-                  </h4>
-
-                  {result.abilityLevel === 'Menunggu Finalisasi' || !result.abilityLevel ? (
-                    <div className="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-2xl text-xs text-amber-800 dark:text-amber-200 border border-amber-200 dark:border-amber-800/50 flex items-center gap-2">
-                      <Clock className="w-4 h-4 text-amber-600 flex-shrink-0 animate-pulse" />
-                      <span>Kategorisasi kuis belum difinalisasi oleh guru. Modul rekomendasi akan terbuka secara otomatis setelah guru menekan tombol <strong>Hitung &amp; Kategorisasi</strong>.</span>
-                    </div>
-                  ) : recommendedModules.length === 0 ? (
-                    <div className="bg-stone-50 dark:bg-slate-700/30 p-4 rounded-2xl text-xs text-stone-500 dark:text-slate-400 italic border border-stone-100 dark:border-slate-700">
-                      Modul khusus belum diunggah untuk tingkat kemampuan ini. Materi umum kuis dapat dipelajari kembali di Ruang Belajar.
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      {recommendedModules.map(item => (
-                        <div key={item.id} className="bg-stone-50 dark:bg-slate-700/40 p-4 rounded-2xl border border-stone-100 dark:border-slate-600 hover:border-red-300 dark:hover:border-red-500 transition-colors flex items-center justify-between gap-3 group">
-                          <div className="flex items-center gap-3 min-w-0">
-                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${item.type === 'video_link' ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400' :
-                              item.type === 'pdf_upload' ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' :
-                                'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400'
-                              }`}>
-                              {item.type === 'video_link' ? <Youtube className="w-5 h-5" /> : item.type === 'pdf_upload' ? <FileText className="w-5 h-5" /> : <ExternalLink className="w-5 h-5" />}
-                            </div>
-                            <div className="min-w-0">
-                              <h5 className="font-bold text-sm text-stone-800 dark:text-white truncate">{item.title}</h5>
-                              <span className="text-[11px] text-stone-400 dark:text-slate-400 capitalize">
-                                {item.type === 'video_link' ? 'Video Pembelajaran' : item.type === 'pdf_upload' ? 'Dokumen PDF' : 'Link Eksternal'}
-                              </span>
-                            </div>
-                          </div>
-
-                          <button
-                            onClick={() => setSelectedMaterial(item)}
-                            className="px-3 py-1.5 bg-white dark:bg-slate-800 text-stone-800 dark:text-slate-200 border dark:border-slate-600 rounded-xl font-bold text-xs hover:bg-red-600 hover:text-white dark:hover:bg-red-600 transition-colors flex items-center flex-shrink-0 shadow-sm"
-                          >
-                            Buka Modul
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* Saved AI Diagnostic Feedback */}
-                {displayFeedback && (
-                  <div className="mt-6 pt-6 border-t border-stone-100 dark:border-slate-700 space-y-4">
-                    <div className="flex items-center justify-between">
-                      <h4 className="text-sm font-bold text-stone-800 dark:text-white flex items-center">
-                        <BrainCircuit className="w-4 h-4 mr-2 text-orange-500" />
-                        AI Diagnostic Feedback
-                        <Sparkles className="w-3.5 h-3.5 ml-1.5 text-amber-500 fill-amber-500" />
+                {/* Expandable Card Content */}
+                {isOpen && (
+                  <div className="space-y-6 pt-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                    {/* Recommended Modules Content */}
+                    <div>
+                      <h4 className="text-sm font-bold text-stone-700 dark:text-slate-200 mb-3 flex items-center">
+                        <BookOpen className="w-4 h-4 mr-2 text-red-600 dark:text-red-400" />
+                        Modul Rekomendasi
+                        <span className="ml-2 text-xs font-medium text-stone-400 dark:text-slate-400">({contextMsg})</span>
                       </h4>
-                      <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${
-                        displayFeedback.generatedBy === 'gemini'
-                          ? 'bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800'
-                          : 'bg-stone-100 dark:bg-slate-700 text-stone-600 dark:text-slate-300 border-stone-200 dark:border-slate-600'
-                      }`}>
-                        {displayFeedback.generatedBy === 'gemini' ? '✨ Gemini AI' : '⚡ Diagnostic Mimphy'}
-                      </span>
-                    </div>
 
-                    {/* Ringkasan */}
-                    <div className="bg-orange-50/60 dark:bg-slate-700/40 p-4 rounded-2xl border border-orange-100 dark:border-slate-600 text-xs text-stone-700 dark:text-slate-300 leading-relaxed font-medium">
-                      <span className="font-bold text-red-900 dark:text-red-300 block mb-1">Ringkasan:</span>
-                      {displayFeedback.summary}
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-                      {/* Kekuatan */}
-                      {displayFeedback.strengths && displayFeedback.strengths.length > 0 && (
-                        <div className="bg-emerald-50/60 dark:bg-emerald-950/20 p-3.5 rounded-xl border border-emerald-100 dark:border-emerald-900/30">
-                          <span className="font-bold text-emerald-900 dark:text-emerald-300 flex items-center mb-1.5">
-                            <CheckCircle2 className="w-3.5 h-3.5 mr-1 text-emerald-600" /> Kekuatan Siswa
-                          </span>
-                          <ul className="space-y-1 text-emerald-800 dark:text-emerald-200">
-                            {displayFeedback.strengths.map((item, i) => (
-                              <li key={i} className="flex items-start">
-                                <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1.5 mr-1.5 flex-shrink-0"></span>
-                                <span>{item}</span>
-                              </li>
-                            ))}
-                          </ul>
+                      {result.abilityLevel === 'Menunggu Finalisasi' || !result.abilityLevel ? (
+                        <div className="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-2xl text-xs text-amber-800 dark:text-amber-200 border border-amber-200 dark:border-amber-800/50 flex items-center gap-2">
+                          <Clock className="w-4 h-4 text-amber-600 flex-shrink-0 animate-pulse" />
+                          <span>Kategorisasi kuis belum difinalisasi oleh guru. Modul rekomendasi akan terbuka secara otomatis setelah guru menekan tombol <strong>Hitung &amp; Kategorisasi</strong>.</span>
                         </div>
-                      )}
-
-                      {/* Area Perbaikan */}
-                      {displayFeedback.areasToImprove && displayFeedback.areasToImprove.length > 0 && (
-                        <div className="bg-amber-50/60 dark:bg-amber-950/20 p-3.5 rounded-xl border border-amber-100 dark:border-amber-900/30">
-                          <span className="font-bold text-amber-900 dark:text-amber-300 flex items-center mb-1.5">
-                            <Target className="w-3.5 h-3.5 mr-1 text-amber-600" /> Area yang Perlu Diperbaiki
-                          </span>
-                          <ul className="space-y-1 text-amber-800 dark:text-amber-200">
-                            {displayFeedback.areasToImprove.map((item, i) => (
-                              <li key={i} className="flex items-start">
-                                <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-500 mt-1.5 mr-1.5 flex-shrink-0"></span>
-                                <span>{item}</span>
-                              </li>
-                            ))}
-                          </ul>
+                      ) : recommendedModules.length === 0 ? (
+                        <div className="bg-stone-50 dark:bg-slate-700/30 p-4 rounded-2xl text-xs text-stone-500 dark:text-slate-400 italic border border-stone-100 dark:border-slate-700">
+                          Modul khusus belum diunggah untuk tingkat kemampuan ini. Materi umum kuis dapat dipelajari kembali di Ruang Belajar.
                         </div>
-                      )}
-                    </div>
+                      ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {recommendedModules.map(item => (
+                            <div key={item.id} className="bg-stone-50 dark:bg-slate-700/40 p-4 rounded-2xl border border-stone-100 dark:border-slate-600 hover:border-red-300 dark:hover:border-red-500 transition-colors flex items-center justify-between gap-3 group">
+                              <div className="flex items-center gap-3 min-w-0">
+                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${item.type === 'video_link' ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400' :
+                                  item.type === 'pdf_upload' ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' :
+                                    'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400'
+                                  }`}>
+                                  {item.type === 'video_link' ? <Youtube className="w-5 h-5" /> : item.type === 'pdf_upload' ? <FileText className="w-5 h-5" /> : <ExternalLink className="w-5 h-5" />}
+                                </div>
+                                <div className="min-w-0">
+                                  <h5 className="font-bold text-sm text-stone-800 dark:text-white truncate">{item.title}</h5>
+                                  <span className="text-[11px] text-stone-400 dark:text-slate-400 capitalize">
+                                    {item.type === 'video_link' ? 'Video Pembelajaran' : item.type === 'pdf_upload' ? 'Dokumen PDF' : 'Link Eksternal'}
+                                  </span>
+                                </div>
+                              </div>
 
-                    {/* Saran Belajar */}
-                    {displayFeedback.studyAdvice && displayFeedback.studyAdvice.length > 0 && (
-                      <div className="bg-blue-50/60 dark:bg-blue-950/20 p-3.5 rounded-xl border border-blue-100 dark:border-blue-900/30 text-xs">
-                        <span className="font-bold text-blue-900 dark:text-blue-300 flex items-center mb-1.5">
-                          <BookOpen className="w-3.5 h-3.5 mr-1 text-blue-600" /> Saran Belajar Konkret
-                        </span>
-                        <ul className="space-y-1 text-blue-800 dark:text-blue-200">
-                          {displayFeedback.studyAdvice.map((item, i) => (
-                            <li key={i} className="flex items-start">
-                              <span className="font-bold text-blue-600 dark:text-blue-400 mr-1.5">{i + 1}.</span>
-                              <span>{item}</span>
-                            </li>
+                              <button
+                                onClick={() => setSelectedMaterial(item)}
+                                className="px-3 py-1.5 bg-white dark:bg-slate-800 text-stone-800 dark:text-slate-200 border dark:border-slate-600 rounded-xl font-bold text-xs hover:bg-red-600 hover:text-white dark:hover:bg-red-600 transition-colors flex items-center flex-shrink-0 shadow-sm"
+                              >
+                                Buka Modul
+                              </button>
+                            </div>
                           ))}
-                        </ul>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Saved AI Diagnostic Feedback */}
+                    {displayFeedback && (
+                      <div className="mt-6 pt-6 border-t border-stone-100 dark:border-slate-700 space-y-4">
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-sm font-bold text-stone-800 dark:text-white flex items-center">
+                            <BrainCircuit className="w-4 h-4 mr-2 text-orange-500" />
+                            AI Diagnostic Feedback
+                            <Sparkles className="w-3.5 h-3.5 ml-1.5 text-amber-500 fill-amber-500" />
+                          </h4>
+                          <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${
+                            displayFeedback.generatedBy === 'gemini'
+                              ? 'bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800'
+                              : 'bg-stone-100 dark:bg-slate-700 text-stone-600 dark:text-slate-300 border-stone-200 dark:border-slate-600'
+                          }`}>
+                            {displayFeedback.generatedBy === 'gemini' ? '✨ Gemini AI' : '⚡ Diagnostic Mimphy'}
+                          </span>
+                        </div>
+
+                        {/* Ringkasan */}
+                        <div className="bg-orange-50/60 dark:bg-slate-700/40 p-4 rounded-2xl border border-orange-100 dark:border-slate-600 text-xs text-stone-700 dark:text-slate-300 leading-relaxed font-medium">
+                          <span className="font-bold text-red-900 dark:text-red-300 block mb-1">Ringkasan:</span>
+                          <ExpandableText text={displayFeedback.summary} maxLength={140} buttonClassName="text-red-600 dark:text-red-400 font-bold hover:underline" />
+                        </div>
+
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                          {/* Kekuatan */}
+                          {displayFeedback.strengths && displayFeedback.strengths.length > 0 && (
+                            <div className="bg-emerald-50/60 dark:bg-emerald-950/20 p-3.5 rounded-xl border border-emerald-100 dark:border-emerald-900/30">
+                              <span className="font-bold text-emerald-900 dark:text-emerald-300 flex items-center mb-1.5">
+                                <CheckCircle2 className="w-3.5 h-3.5 mr-1 text-emerald-600" /> Kekuatan Siswa
+                              </span>
+                              <ul className="space-y-1 text-emerald-800 dark:text-emerald-200">
+                                {displayFeedback.strengths.map((item, i) => (
+                                  <li key={i} className="flex items-start">
+                                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1.5 mr-1.5 flex-shrink-0"></span>
+                                    <ExpandableText text={item} maxLength={100} buttonClassName="text-emerald-700 dark:text-emerald-300 font-bold hover:underline" />
+                                  </li>
+                                ))}
+                              </ul>
+
+                            </div>
+                          )}
+
+                          {/* Area Perbaikan */}
+                          {displayFeedback.areasToImprove && displayFeedback.areasToImprove.length > 0 && (
+                            <div className="bg-amber-50/60 dark:bg-amber-950/20 p-3.5 rounded-xl border border-amber-100 dark:border-amber-900/30">
+                              <span className="font-bold text-amber-900 dark:text-amber-300 flex items-center mb-1.5">
+                                <Target className="w-3.5 h-3.5 mr-1 text-amber-600" /> Area yang Perlu Diperbaiki
+                              </span>
+                              <ul className="space-y-1 text-amber-800 dark:text-amber-200">
+                                {displayFeedback.areasToImprove.map((item, i) => (
+                                  <li key={i} className="flex items-start">
+                                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-500 mt-1.5 mr-1.5 flex-shrink-0"></span>
+                                    <ExpandableText text={item} maxLength={100} buttonClassName="text-amber-700 dark:text-amber-300 font-bold hover:underline" />
+                                  </li>
+                                ))}
+                              </ul>
+
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Saran Belajar */}
+                        {displayFeedback.studyAdvice && displayFeedback.studyAdvice.length > 0 && (
+                          <div className="bg-blue-50/60 dark:bg-blue-950/20 p-3.5 rounded-xl border border-blue-100 dark:border-blue-900/30 text-xs">
+                            <span className="font-bold text-blue-900 dark:text-blue-300 flex items-center mb-1.5">
+                              <BookOpen className="w-3.5 h-3.5 mr-1 text-blue-600" /> Saran Belajar Konkret
+                            </span>
+                            <ul className="space-y-1 text-blue-800 dark:text-blue-200">
+                              {displayFeedback.studyAdvice.map((item, i) => (
+                                <li key={i} className="flex items-start">
+                                  <span className="font-bold text-blue-600 dark:text-blue-400 mr-1.5">{i + 1}.</span>
+                                  <ExpandableText text={item} maxLength={100} buttonClassName="text-blue-700 dark:text-blue-300 font-bold hover:underline" />
+                                </li>
+                              ))}
+                            </ul>
+
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
