@@ -6,6 +6,7 @@ import { SupabaseService } from '@/lib/supabaseService';
 import { processTestStatistics } from '@/lib/statsService';
 import { RefreshCw, Users, Filter, FileSpreadsheet, Download, X, Calendar, BrainCircuit, BarChart3, Eye, Ear, Activity, Info, AlertTriangle, CheckCircle2, Calculator, Loader2 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { DifficultyAnalyticsCard } from '@/features/teachers/components/DifficultyAnalyticsCard';
 
 interface Props {
   results: StudentResult[];
@@ -329,6 +330,13 @@ export const TeacherResults: React.FC<Props> = ({ results, packets, onRefresh })
                 </div>
             </div>
         )}
+
+        {/* Word Cloud Analisis Kesulitan Materi */}
+        <DifficultyAnalyticsCard 
+            results={results}
+            packets={packets}
+            onRefresh={onRefresh}
+        />
 
         {/* Statistics Section */}
         <div className="grid md:grid-cols-3 gap-4">
