@@ -1,10 +1,9 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { StudentResult, AbilityLevel, QuizPacket, LearningStyle, StudentProfile, PacketStatus } from '@/types';
 import { ExportService } from '@/lib/exportService';
 import { SupabaseService } from '@/lib/supabaseService';
 import { processTestStatistics } from '@/lib/statsService';
-import { RefreshCw, Users, Filter, FileSpreadsheet, Download, X, Calendar, BrainCircuit, BarChart3, Eye, Ear, Activity, Info, AlertTriangle, CheckCircle2, Calculator, Loader2 } from 'lucide-react';
+import { RefreshCw, Users, Filter, FileSpreadsheet, Download, X, Calendar, BrainCircuit, BarChart3, Eye, Ear, Activity, Info, AlertTriangle, CheckCircle2, Calculator, Loader2, Cloud, Layers, ArrowUp } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { DifficultyAnalyticsCard } from '@/features/teachers/components/DifficultyAnalyticsCard';
 
@@ -19,6 +18,9 @@ export const TeacherResults: React.FC<Props> = ({ results, packets, onRefresh })
   const [filterPacket, setFilterPacket] = useState<string>('all');
   const [groupingMode, setGroupingMode] = useState<'ability' | 'style'>('ability');
   const [isFinalizing, setIsFinalizing] = useState(false);
+  
+  // Active Sub-Tab: Controls which analysis view is focused (word_cloud | distribution | groups | history | all)
+  const [activeAnalysisTab, setActiveAnalysisTab] = useState<'word_cloud' | 'distribution' | 'groups' | 'history' | 'all'>('word_cloud');
   
   // Export Modal State
   const [showExportModal, setShowExportModal] = useState(false);
@@ -237,11 +239,11 @@ export const TeacherResults: React.FC<Props> = ({ results, packets, onRefresh })
             </div>
         )}
 
-        {/* Filter Section */}
+        {/* Global Filter Bar */}
         <div className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-stone-200 dark:border-slate-700 flex flex-col xl:flex-row xl:items-center justify-between gap-4 transition-colors">
             <div className="flex items-center space-x-2 text-stone-600 dark:text-slate-400">
                 <RefreshCw className="w-4 h-4 animate-spin-slow" />
-                <span className="text-sm">Data diperbarui otomatis setiap 5 detik</span>
+                <span className="text-sm font-medium">Data diperbarui otomatis</span>
             </div>
             
             <div className="flex flex-col md:flex-row items-start md:items-center gap-3">
@@ -282,6 +284,72 @@ export const TeacherResults: React.FC<Props> = ({ results, packets, onRefresh })
                     className="flex items-center justify-center w-full md:w-auto px-4 py-2 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-900/50 rounded-lg text-sm font-bold transition-colors border border-green-200 dark:border-green-800"
                 >
                     <FileSpreadsheet className="w-4 h-4 mr-2" /> Export Excel
+                </button>
+            </div>
+        </div>
+
+        {/* Top Sub-Tab Navigation Bar for Quick Access (Fixes scrolling friction) */}
+        <div className="sticky top-2 z-30 bg-white/90 dark:bg-slate-800/90 backdrop-blur-md p-2 rounded-2xl border border-stone-200 dark:border-slate-700 shadow-md flex items-center justify-between overflow-x-auto gap-2">
+            <div className="flex items-center space-x-1.5 min-w-max">
+                <button
+                    onClick={() => {
+                        setActiveAnalysisTab('word_cloud');
+                    }}
+                    className={`px-4 py-2 text-xs font-extrabold rounded-xl flex items-center transition-all ${
+                        activeAnalysisTab === 'word_cloud'
+                            ? 'bg-red-600 text-white shadow-md shadow-red-200 dark:shadow-none'
+                            : 'text-stone-600 dark:text-slate-300 hover:bg-stone-100 dark:hover:bg-slate-700'
+                    }`}
+                >
+                    <Cloud className="w-4 h-4 mr-2 text-red-100" /> Pemetaan Materi (Word Cloud)
+                </button>
+                <button
+                    onClick={() => {
+                        setActiveAnalysisTab('distribution');
+                    }}
+                    className={`px-4 py-2 text-xs font-extrabold rounded-xl flex items-center transition-all ${
+                        activeAnalysisTab === 'distribution'
+                            ? 'bg-red-600 text-white shadow-md shadow-red-200 dark:shadow-none'
+                            : 'text-stone-600 dark:text-slate-300 hover:bg-stone-100 dark:hover:bg-slate-700'
+                    }`}
+                >
+                    <BarChart3 className="w-4 h-4 mr-2 text-red-100" /> Statistik &amp; Distribusi
+                </button>
+                <button
+                    onClick={() => {
+                        setActiveAnalysisTab('groups');
+                    }}
+                    className={`px-4 py-2 text-xs font-extrabold rounded-xl flex items-center transition-all ${
+                        activeAnalysisTab === 'groups'
+                            ? 'bg-red-600 text-white shadow-md shadow-red-200 dark:shadow-none'
+                            : 'text-stone-600 dark:text-slate-300 hover:bg-stone-100 dark:hover:bg-slate-700'
+                    }`}
+                >
+                    <Users className="w-4 h-4 mr-2 text-red-100" /> Kelompok Belajar
+                </button>
+                <button
+                    onClick={() => {
+                        setActiveAnalysisTab('history');
+                    }}
+                    className={`px-4 py-2 text-xs font-extrabold rounded-xl flex items-center transition-all ${
+                        activeAnalysisTab === 'history'
+                            ? 'bg-red-600 text-white shadow-md shadow-red-200 dark:shadow-none'
+                            : 'text-stone-600 dark:text-slate-300 hover:bg-stone-100 dark:hover:bg-slate-700'
+                    }`}
+                >
+                    <FileSpreadsheet className="w-4 h-4 mr-2 text-red-100" /> Riwayat Nilai
+                </button>
+                <button
+                    onClick={() => {
+                        setActiveAnalysisTab('all');
+                    }}
+                    className={`px-4 py-2 text-xs font-extrabold rounded-xl flex items-center transition-all ${
+                        activeAnalysisTab === 'all'
+                            ? 'bg-stone-800 dark:bg-slate-700 text-white shadow-sm'
+                            : 'text-stone-500 dark:text-slate-400 hover:bg-stone-100 dark:hover:bg-slate-700'
+                    }`}
+                >
+                    <Layers className="w-4 h-4 mr-2 text-slate-300" /> Semua Tampilan
                 </button>
             </div>
         </div>
@@ -331,330 +399,338 @@ export const TeacherResults: React.FC<Props> = ({ results, packets, onRefresh })
             </div>
         )}
 
-        {/* Word Cloud Analisis Kesulitan Materi */}
-        <DifficultyAnalyticsCard 
-            results={results}
-            packets={packets}
-            onRefresh={onRefresh}
-        />
+        {/* SECTION 1: Word Cloud Analisis Kesulitan Materi */}
+        {(activeAnalysisTab === 'word_cloud' || activeAnalysisTab === 'all') && (
+            <DifficultyAnalyticsCard 
+                results={results}
+                packets={packets}
+                onRefresh={onRefresh}
+            />
+        )}
 
-        {/* Statistics Section */}
-        <div className="grid md:grid-cols-3 gap-4">
-            <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-stone-200 dark:border-slate-700 col-span-2 transition-colors">
-                <h3 className="font-semibold text-lg mb-6 flex items-center justify-between text-stone-800 dark:text-white">
-                    <span>
-                        Distribusi {groupingMode === 'ability' ? 'Kemampuan (Azwar SD)' : 'Gaya Belajar'}
-                    </span>
-                    {(filterClass !== 'all' || filterPacket !== 'all') && (
-                        <span className="text-xs bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 px-2 py-1 rounded-full">
-                            {filterClass !== 'all' ? filterClass : 'Semua Kelas'} &bull; {filterPacket !== 'all' ? filterPacket : 'Semua Paket'}
+        {/* SECTION 2: Statistics Section */}
+        {(activeAnalysisTab === 'distribution' || activeAnalysisTab === 'all') && (
+            <div className="grid md:grid-cols-3 gap-4">
+                <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-stone-200 dark:border-slate-700 col-span-2 transition-colors">
+                    <h3 className="font-semibold text-lg mb-6 flex items-center justify-between text-stone-800 dark:text-white">
+                        <span>
+                            Distribusi {groupingMode === 'ability' ? 'Kemampuan (Azwar SD)' : 'Gaya Belajar'}
                         </span>
-                    )}
-                </h3>
-                <div className="h-64">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={chartData}>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#94a3b8" opacity={0.3} />
-                            <XAxis dataKey="name" tick={{fill: '#94a3b8', fontSize: 12}} />
-                            <YAxis allowDecimals={false} tick={{fill: '#94a3b8', fontSize: 12}} />
-                            <Tooltip cursor={{fill: 'rgba(255,255,255,0.1)'}} contentStyle={{borderRadius: '8px', backgroundColor: '#1e293b', border: 'none', color: '#fff'}} />
-                            <Bar dataKey="count" radius={[6, 6, 0, 0]}>
-                                {chartData.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={entry.color} />
-                                ))}
-                            </Bar>
-                        </BarChart>
-                    </ResponsiveContainer>
-                </div>
-            </div>
-
-            {/* Detailed Statistical Summary Card */}
-            <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-stone-200 dark:border-slate-700 transition-colors flex flex-col justify-between">
-                <div>
-                    <h3 className="font-semibold text-lg mb-4 text-stone-800 dark:text-white flex items-center justify-between">
-                        <span>Ringkasan Statistik</span>
-                        <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${
-                            selectedPacketObj?.status === 'COMPLETED' ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300' :
-                            selectedPacketObj?.status === 'DRAFT' ? 'bg-slate-100 dark:bg-slate-700 text-slate-500' :
-                            'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300'
-                        }`}>
-                            Status: {selectedPacketObj?.status || 'Active'}
-                        </span>
-                    </h3>
-                    <div className="grid grid-cols-2 gap-3 text-xs">
-                        <div className="bg-stone-50 dark:bg-slate-700/50 p-3 rounded-lg border border-stone-100 dark:border-slate-600">
-                            <p className="text-stone-500 dark:text-slate-400 font-medium">Jumlah Peserta</p>
-                            <p className="text-xl font-extrabold text-stone-800 dark:text-white">
-                                {statsCalculation.stats?.participantCount || filteredResults.length} Siswa
-                            </p>
-                        </div>
-                        <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-100 dark:border-blue-900/40">
-                            <p className="text-blue-600 dark:text-blue-400 font-medium">Mean (μ)</p>
-                            <p className="text-xl font-extrabold text-blue-700 dark:text-blue-300">
-                                {statsCalculation.stats ? statsCalculation.stats.mean : (filteredResults.length > 0 ? Math.round(filteredResults.reduce((a, b) => a + b.score, 0) / filteredResults.length) : 0)}
-                            </p>
-                        </div>
-                        <div className="bg-purple-50 dark:bg-purple-900/20 p-3 rounded-lg border border-purple-100 dark:border-purple-900/40">
-                            <p className="text-purple-600 dark:text-purple-400 font-medium">Std Deviasi (σ)</p>
-                            <p className="text-xl font-extrabold text-purple-700 dark:text-purple-300">
-                                {statsCalculation.stats ? statsCalculation.stats.standardDeviation : '-'}
-                            </p>
-                        </div>
-                        <div className="bg-emerald-50 dark:bg-emerald-900/20 p-3 rounded-lg border border-emerald-100 dark:border-emerald-900/40">
-                            <p className="text-emerald-600 dark:text-emerald-400 font-medium">Threshold (μ ± σ)</p>
-                            <p className="text-xs font-bold text-emerald-800 dark:text-emerald-200 mt-1">
-                                {statsCalculation.stats ? `${statsCalculation.stats.lowerThreshold} / ${statsCalculation.stats.upperThreshold}` : '-'}
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Distribusi Kategori Summary */}
-                <div className="mt-4 pt-3 border-t border-stone-100 dark:border-slate-700">
-                    <p className="text-xs font-bold text-stone-500 dark:text-slate-400 mb-2">Distribusi Kategori Kemampuan:</p>
-                    <div className="grid grid-cols-3 gap-2 text-center text-xs">
-                        <div className="bg-red-50 dark:bg-red-900/20 p-1.5 rounded-lg border border-red-100 dark:border-red-900/40">
-                            <span className="text-red-700 dark:text-red-300 block font-extrabold">{groupedByAbility[AbilityLevel.BASIC].length}</span>
-                            <span className="text-[10px] text-red-500">Rendah</span>
-                        </div>
-                        <div className="bg-yellow-50 dark:bg-yellow-900/20 p-1.5 rounded-lg border border-yellow-100 dark:border-yellow-900/40">
-                            <span className="text-yellow-700 dark:text-yellow-300 block font-extrabold">{groupedByAbility[AbilityLevel.MEDIUM].length}</span>
-                            <span className="text-[10px] text-yellow-600">Sedang</span>
-                        </div>
-                        <div className="bg-green-50 dark:bg-green-900/20 p-1.5 rounded-lg border border-green-100 dark:border-green-900/40">
-                            <span className="text-green-700 dark:text-green-300 block font-extrabold">{groupedByAbility[AbilityLevel.HIGH].length}</span>
-                            <span className="text-[10px] text-green-600">Tinggi</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        {/* Groups Toggle & Display */}
-        <div className="space-y-4">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <div>
-                    <h3 className="font-bold text-xl text-stone-800 dark:text-white flex items-center">
-                        <Users className="w-6 h-6 mr-2 text-red-600" />
-                        Rekomendasi Kelompok Belajar
-                    </h3>
-                    <p className="text-stone-500 dark:text-slate-400 text-sm">Siswa dikelompokkan secara otomatis.</p>
-                </div>
-                
-                {/* MODE TOGGLE */}
-                <div className="flex bg-stone-100 dark:bg-slate-700 p-1 rounded-lg">
-                    <button 
-                        onClick={() => setGroupingMode('ability')}
-                        className={`px-4 py-2 text-sm font-bold rounded-md flex items-center transition-all ${groupingMode === 'ability' ? 'bg-white dark:bg-slate-600 text-red-600 dark:text-white shadow-sm' : 'text-stone-500 dark:text-slate-400'}`}
-                    >
-                        <BarChart3 className="w-4 h-4 mr-2"/> Hasil Belajar
-                    </button>
-                    <button 
-                        onClick={() => setGroupingMode('style')}
-                        className={`px-4 py-2 text-sm font-bold rounded-md flex items-center transition-all ${groupingMode === 'style' ? 'bg-white dark:bg-slate-600 text-orange-600 dark:text-white shadow-sm' : 'text-stone-500 dark:text-slate-400'}`}
-                    >
-                        <BrainCircuit className="w-4 h-4 mr-2"/> Gaya Belajar
-                    </button>
-                </div>
-            </div>
-            
-            <div className="grid md:grid-cols-3 gap-6">
-                {/* CONDITIONAL RENDERING BASED ON MODE */}
-                
-                {groupingMode === 'ability' ? (
-                    <>
-                        {/* High Ability Group */}
-                        <div className="bg-green-50 dark:bg-green-900/10 rounded-xl border border-green-200 dark:border-green-900/40 p-4">
-                            <div className="flex items-center justify-between mb-4 border-b border-green-200 dark:border-green-900/40 pb-2">
-                                <h4 className="font-bold text-green-800 dark:text-green-400 flex items-center"><Users className="w-4 h-4 mr-2"/> Kelompok Mahir</h4>
-                                <span className="bg-white dark:bg-slate-800 text-green-700 dark:text-green-400 px-2 py-1 rounded-full text-xs font-bold shadow-sm">
-                                    {groupedByAbility[AbilityLevel.HIGH].length} Siswa
-                                </span>
-                            </div>
-                            <div className="space-y-2 max-h-[400px] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-green-200">
-                                {groupedByAbility[AbilityLevel.HIGH].map(r => (
-                                    <div key={r.id} className="bg-white dark:bg-slate-800 p-3 rounded-lg shadow-sm border border-green-100 dark:border-green-900/30 hover:shadow-md transition-shadow">
-                                        <div className="font-bold text-slate-800 dark:text-white text-sm">{r.studentName}</div>
-                                        <div className="flex justify-between mt-1 text-xs">
-                                            <span className="text-slate-500 dark:text-slate-400">{r.className}</span>
-                                            <span className="font-mono font-bold text-green-600 dark:text-green-400">{r.score}</span>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Medium Ability Group */}
-                        <div className="bg-yellow-50 dark:bg-yellow-900/10 rounded-xl border border-yellow-200 dark:border-yellow-900/40 p-4">
-                            <div className="flex items-center justify-between mb-4 border-b border-yellow-200 dark:border-yellow-900/40 pb-2">
-                                <h4 className="font-bold text-yellow-800 dark:text-yellow-400 flex items-center"><Users className="w-4 h-4 mr-2"/> Kelompok Sedang</h4>
-                                <span className="bg-white dark:bg-slate-800 text-yellow-700 dark:text-yellow-400 px-2 py-1 rounded-full text-xs font-bold shadow-sm">
-                                    {groupedByAbility[AbilityLevel.MEDIUM].length} Siswa
-                                </span>
-                            </div>
-                            <div className="space-y-2 max-h-[400px] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-yellow-200">
-                                {groupedByAbility[AbilityLevel.MEDIUM].map(r => (
-                                    <div key={r.id} className="bg-white dark:bg-slate-800 p-3 rounded-lg shadow-sm border border-yellow-100 dark:border-yellow-900/30 hover:shadow-md transition-shadow">
-                                        <div className="font-bold text-slate-800 dark:text-white text-sm">{r.studentName}</div>
-                                        <div className="flex justify-between mt-1 text-xs">
-                                            <span className="text-slate-500 dark:text-slate-400">{r.className}</span>
-                                            <span className="font-mono font-bold text-yellow-600 dark:text-yellow-400">{r.score}</span>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Basic Ability Group */}
-                        <div className="bg-red-50 dark:bg-red-900/10 rounded-xl border border-red-200 dark:border-red-900/40 p-4">
-                            <div className="flex items-center justify-between mb-4 border-b border-red-200 dark:border-red-900/40 pb-2">
-                                <h4 className="font-bold text-red-800 dark:text-red-400 flex items-center"><Users className="w-4 h-4 mr-2"/> Kelompok Dasar</h4>
-                                <span className="bg-white dark:bg-slate-800 text-red-700 dark:text-red-400 px-2 py-1 rounded-full text-xs font-bold shadow-sm">
-                                    {groupedByAbility[AbilityLevel.BASIC].length} Siswa
-                                </span>
-                            </div>
-                            <div className="space-y-2 max-h-[400px] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-red-200">
-                                {groupedByAbility[AbilityLevel.BASIC].map(r => (
-                                    <div key={r.id} className="bg-white dark:bg-slate-800 p-3 rounded-lg shadow-sm border border-red-100 dark:border-red-900/30 hover:shadow-md transition-shadow">
-                                        <div className="font-bold text-slate-800 dark:text-white text-sm">{r.studentName}</div>
-                                        <div className="flex justify-between mt-1 text-xs">
-                                            <span className="text-slate-500 dark:text-slate-400">{r.className}</span>
-                                            <span className="font-mono font-bold text-red-600 dark:text-red-400">{r.score}</span>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </>
-                ) : (
-                    <>
-                        {/* Visual Group */}
-                        <div className="bg-blue-50 dark:bg-blue-900/10 rounded-xl border border-blue-200 dark:border-blue-900/40 p-4">
-                            <div className="flex items-center justify-between mb-4 border-b border-blue-200 dark:border-blue-900/40 pb-2">
-                                <h4 className="font-bold text-blue-800 dark:text-blue-400 flex items-center"><Eye className="w-4 h-4 mr-2"/> Kelompok Visual</h4>
-                                <span className="bg-white dark:bg-slate-800 text-blue-700 dark:text-blue-400 px-2 py-1 rounded-full text-xs font-bold shadow-sm">
-                                    {groupedByStyle[LearningStyle.VISUAL].length} Siswa
-                                </span>
-                            </div>
-                            <div className="space-y-2 max-h-[400px] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-blue-200">
-                                {groupedByStyle[LearningStyle.VISUAL].map(r => (
-                                    <div key={r.id} className="bg-white dark:bg-slate-800 p-3 rounded-lg shadow-sm border border-blue-100 dark:border-blue-900/30 hover:shadow-md transition-shadow">
-                                        <div className="font-bold text-slate-800 dark:text-white text-sm">{r.studentName}</div>
-                                        <div className="flex justify-between mt-1 text-xs">
-                                            <span className="text-slate-500 dark:text-slate-400">{r.className}</span>
-                                            <span className="font-mono font-bold text-blue-600 dark:text-blue-400">{r.score}</span>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Auditory Group */}
-                        <div className="bg-purple-50 dark:bg-purple-900/10 rounded-xl border border-purple-200 dark:border-purple-900/40 p-4">
-                            <div className="flex items-center justify-between mb-4 border-b border-purple-200 dark:border-purple-900/40 pb-2">
-                                <h4 className="font-bold text-purple-800 dark:text-purple-400 flex items-center"><Ear className="w-4 h-4 mr-2"/> Kelompok Auditori</h4>
-                                <span className="bg-white dark:bg-slate-800 text-purple-700 dark:text-purple-400 px-2 py-1 rounded-full text-xs font-bold shadow-sm">
-                                    {groupedByStyle[LearningStyle.AUDITORY].length} Siswa
-                                </span>
-                            </div>
-                            <div className="space-y-2 max-h-[400px] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-purple-200">
-                                {groupedByStyle[LearningStyle.AUDITORY].map(r => (
-                                    <div key={r.id} className="bg-white dark:bg-slate-800 p-3 rounded-lg shadow-sm border border-purple-100 dark:border-purple-900/30 hover:shadow-md transition-shadow">
-                                        <div className="font-bold text-slate-800 dark:text-white text-sm">{r.studentName}</div>
-                                        <div className="flex justify-between mt-1 text-xs">
-                                            <span className="text-slate-500 dark:text-slate-400">{r.className}</span>
-                                            <span className="font-mono font-bold text-purple-600 dark:text-purple-400">{r.score}</span>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Kinesthetic Group */}
-                        <div className="bg-orange-50 dark:bg-orange-900/10 rounded-xl border border-orange-200 dark:border-orange-900/40 p-4">
-                            <div className="flex items-center justify-between mb-4 border-b border-orange-200 dark:border-orange-900/40 pb-2">
-                                <h4 className="font-bold text-orange-800 dark:text-orange-400 flex items-center"><Activity className="w-4 h-4 mr-2"/> Kelompok Kinestetik</h4>
-                                <span className="bg-white dark:bg-slate-800 text-orange-700 dark:text-orange-400 px-2 py-1 rounded-full text-xs font-bold shadow-sm">
-                                    {groupedByStyle[LearningStyle.KINESTHETIC].length} Siswa
-                                </span>
-                            </div>
-                            <div className="space-y-2 max-h-[400px] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-orange-200">
-                                {groupedByStyle[LearningStyle.KINESTHETIC].map(r => (
-                                    <div key={r.id} className="bg-white dark:bg-slate-800 p-3 rounded-lg shadow-sm border border-orange-100 dark:border-orange-900/30 hover:shadow-md transition-shadow">
-                                        <div className="font-bold text-slate-800 dark:text-white text-sm">{r.studentName}</div>
-                                        <div className="flex justify-between mt-1 text-xs">
-                                            <span className="text-slate-500 dark:text-slate-400">{r.className}</span>
-                                            <span className="font-mono font-bold text-orange-600 dark:text-orange-400">{r.score}</span>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </>
-                )}
-            </div>
-        </div>
-
-        {/* Existing Table View */}
-        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden mt-8 transition-colors">
-            <div className="p-4 bg-slate-50 dark:bg-slate-700/50 border-b border-slate-200 dark:border-slate-600 font-semibold text-slate-700 dark:text-slate-200">
-                Detail Riwayat Pengerjaan
-            </div>
-            <div className="overflow-x-auto">
-                <table className="w-full text-sm text-left min-w-[700px]">
-                    <thead className="bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-medium border-b border-slate-100 dark:border-slate-700">
-                        <tr>
-                            <th className="px-6 py-3 whitespace-nowrap">Waktu</th>
-                            <th className="px-6 py-3 whitespace-nowrap">Nama Siswa</th>
-                            <th className="px-6 py-3 whitespace-nowrap">Kelas</th>
-                            <th className="px-6 py-3 whitespace-nowrap">Paket Soal</th>
-                            <th className="px-6 py-3 whitespace-nowrap">Nilai</th>
-                            <th className="px-6 py-3 whitespace-nowrap">Kemampuan</th>
-                            <th className="px-6 py-3 whitespace-nowrap">Gaya Belajar</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                        {filteredResults.length === 0 && (
-                            <tr><td colSpan={7} className="text-center py-8 text-slate-400 dark:text-slate-500">Tidak ada data hasil kuis yang cocok dengan filter.</td></tr>
+                        {(filterClass !== 'all' || filterPacket !== 'all') && (
+                            <span className="text-xs bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 px-2 py-1 rounded-full">
+                                {filterClass !== 'all' ? filterClass : 'Semua Kelas'} &bull; {filterPacket !== 'all' ? filterPacket : 'Semua Paket'}
+                            </span>
                         )}
-                        {filteredResults.sort((a,b) => b.timestamp - a.timestamp).map(r => {
-                            const style = getStudentStyle(r.studentId);
-                            return (
-                                <tr key={r.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
-                                    <td className="px-6 py-3 text-slate-500 dark:text-slate-400 whitespace-nowrap">{new Date(r.timestamp).toLocaleDateString()} {new Date(r.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</td>
-                                    <td className="px-6 py-3 font-medium text-slate-900 dark:text-white">{r.studentName}</td>
-                                    <td className="px-6 py-3 text-slate-600 dark:text-slate-300">{r.className}</td>
-                                    <td className="px-6 py-3 text-slate-600 dark:text-slate-300 font-mono text-xs"><span className="bg-slate-50 dark:bg-slate-700 px-2 py-0.5 rounded">{r.packetId}</span></td>
-                                    <td className="px-6 py-3 font-bold dark:text-white">{r.score}</td>
-                                    <td className="px-6 py-3">
-                                        <span className={`px-2 py-1 rounded-full text-xs font-bold ${
-                                            r.abilityLevel === AbilityLevel.HIGH ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' :
-                                            r.abilityLevel === AbilityLevel.MEDIUM ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400' :
-                                            (r.abilityLevel === AbilityLevel.BASIC || (r.abilityLevel as string) === 'Dasar') ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400' :
-                                            'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800'
-                                        }`}>
-                                            {r.abilityLevel || 'Menunggu Finalisasi'}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-3">
-                                        <span className={`px-2 py-1 rounded-full text-xs font-medium flex w-fit items-center gap-1 ${
-                                            style === LearningStyle.VISUAL ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400' :
-                                            style === LearningStyle.AUDITORY ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400' :
-                                            'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400'
-                                        }`}>
-                                            {style === LearningStyle.VISUAL && <Eye className="w-3 h-3"/>}
-                                            {style === LearningStyle.AUDITORY && <Ear className="w-3 h-3"/>}
-                                            {style === LearningStyle.KINESTHETIC && <Activity className="w-3 h-3"/>}
-                                            {style}
-                                        </span>
-                                    </td>
-                                </tr>
-                            );
-                        })}
-                    </tbody>
-                </table>
+                    </h3>
+                    <div className="h-64">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={chartData}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#94a3b8" opacity={0.3} />
+                                <XAxis dataKey="name" tick={{fill: '#94a3b8', fontSize: 12}} />
+                                <YAxis allowDecimals={false} tick={{fill: '#94a3b8', fontSize: 12}} />
+                                <Tooltip cursor={{fill: 'rgba(255,255,255,0.1)'}} contentStyle={{borderRadius: '8px', backgroundColor: '#1e293b', border: 'none', color: '#fff'}} />
+                                <Bar dataKey="count" radius={[6, 6, 0, 0]}>
+                                    {chartData.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={entry.color} />
+                                    ))}
+                                </Bar>
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
+
+                {/* Detailed Statistical Summary Card */}
+                <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-stone-200 dark:border-slate-700 transition-colors flex flex-col justify-between">
+                    <div>
+                        <h3 className="font-semibold text-lg mb-4 text-stone-800 dark:text-white flex items-center justify-between">
+                            <span>Ringkasan Statistik</span>
+                            <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${
+                                selectedPacketObj?.status === 'COMPLETED' ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300' :
+                                selectedPacketObj?.status === 'DRAFT' ? 'bg-slate-100 dark:bg-slate-700 text-slate-500' :
+                                'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300'
+                            }`}>
+                                Status: {selectedPacketObj?.status || 'Active'}
+                            </span>
+                        </h3>
+                        <div className="grid grid-cols-2 gap-3 text-xs">
+                            <div className="bg-stone-50 dark:bg-slate-700/50 p-3 rounded-lg border border-stone-100 dark:border-slate-600">
+                                <p className="text-stone-500 dark:text-slate-400 font-medium">Jumlah Peserta</p>
+                                <p className="text-xl font-extrabold text-stone-800 dark:text-white">
+                                    {statsCalculation.stats?.participantCount || filteredResults.length} Siswa
+                                </p>
+                            </div>
+                            <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-100 dark:border-blue-900/40">
+                                <p className="text-blue-600 dark:text-blue-400 font-medium">Mean (μ)</p>
+                                <p className="text-xl font-extrabold text-blue-700 dark:text-blue-300">
+                                    {statsCalculation.stats ? statsCalculation.stats.mean : (filteredResults.length > 0 ? Math.round(filteredResults.reduce((a, b) => a + b.score, 0) / filteredResults.length) : 0)}
+                                </p>
+                            </div>
+                            <div className="bg-purple-50 dark:bg-purple-900/20 p-3 rounded-lg border border-purple-100 dark:border-purple-900/40">
+                                <p className="text-purple-600 dark:text-purple-400 font-medium">Std Deviasi (σ)</p>
+                                <p className="text-xl font-extrabold text-purple-700 dark:text-purple-300">
+                                    {statsCalculation.stats ? statsCalculation.stats.standardDeviation : '-'}
+                                </p>
+                            </div>
+                            <div className="bg-emerald-50 dark:bg-emerald-900/20 p-3 rounded-lg border border-emerald-100 dark:border-emerald-900/40">
+                                <p className="text-emerald-600 dark:text-emerald-400 font-medium">Threshold (μ ± σ)</p>
+                                <p className="text-xs font-bold text-emerald-800 dark:text-emerald-200 mt-1">
+                                    {statsCalculation.stats ? `${statsCalculation.stats.lowerThreshold} / ${statsCalculation.stats.upperThreshold}` : '-'}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Distribusi Kategori Summary */}
+                    <div className="mt-4 pt-3 border-t border-stone-100 dark:border-slate-700">
+                        <p className="text-xs font-bold text-stone-500 dark:text-slate-400 mb-2">Distribusi Kategori Kemampuan:</p>
+                        <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                            <div className="bg-red-50 dark:bg-red-900/20 p-1.5 rounded-lg border border-red-100 dark:border-red-900/40">
+                                <span className="text-red-700 dark:text-red-300 block font-extrabold">{groupedByAbility[AbilityLevel.BASIC].length}</span>
+                                <span className="text-[10px] text-red-500">Rendah</span>
+                            </div>
+                            <div className="bg-yellow-50 dark:bg-yellow-900/20 p-1.5 rounded-lg border border-yellow-100 dark:border-yellow-900/40">
+                                <span className="text-yellow-700 dark:text-yellow-300 block font-extrabold">{groupedByAbility[AbilityLevel.MEDIUM].length}</span>
+                                <span className="text-[10px] text-yellow-600">Sedang</span>
+                            </div>
+                            <div className="bg-green-50 dark:bg-green-900/20 p-1.5 rounded-lg border border-green-100 dark:border-green-900/40">
+                                <span className="text-green-700 dark:text-green-300 block font-extrabold">{groupedByAbility[AbilityLevel.HIGH].length}</span>
+                                <span className="text-[10px] text-green-600">Tinggi</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-        </div>
+        )}
+
+        {/* SECTION 3: Groups Toggle & Display */}
+        {(activeAnalysisTab === 'groups' || activeAnalysisTab === 'all') && (
+            <div className="space-y-4">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div>
+                        <h3 className="font-bold text-xl text-stone-800 dark:text-white flex items-center">
+                            <Users className="w-6 h-6 mr-2 text-red-600" />
+                            Rekomendasi Kelompok Belajar
+                        </h3>
+                        <p className="text-stone-500 dark:text-slate-400 text-sm">Siswa dikelompokkan secara otomatis.</p>
+                    </div>
+                    
+                    {/* MODE TOGGLE */}
+                    <div className="flex bg-stone-100 dark:bg-slate-700 p-1 rounded-lg">
+                        <button 
+                            onClick={() => setGroupingMode('ability')}
+                            className={`px-4 py-2 text-sm font-bold rounded-md flex items-center transition-all ${groupingMode === 'ability' ? 'bg-white dark:bg-slate-600 text-red-600 dark:text-white shadow-sm' : 'text-stone-500 dark:text-slate-400'}`}
+                        >
+                            <BarChart3 className="w-4 h-4 mr-2"/> Hasil Belajar
+                        </button>
+                        <button 
+                            onClick={() => setGroupingMode('style')}
+                            className={`px-4 py-2 text-sm font-bold rounded-md flex items-center transition-all ${groupingMode === 'style' ? 'bg-white dark:bg-slate-600 text-orange-600 dark:text-white shadow-sm' : 'text-stone-500 dark:text-slate-400'}`}
+                        >
+                            <BrainCircuit className="w-4 h-4 mr-2"/> Gaya Belajar
+                        </button>
+                    </div>
+                </div>
+                
+                <div className="grid md:grid-cols-3 gap-6">
+                    {/* CONDITIONAL RENDERING BASED ON MODE */}
+                    
+                    {groupingMode === 'ability' ? (
+                        <>
+                            {/* High Ability Group */}
+                            <div className="bg-green-50 dark:bg-green-900/10 rounded-xl border border-green-200 dark:border-green-900/40 p-4">
+                                <div className="flex items-center justify-between mb-4 border-b border-green-200 dark:border-green-900/40 pb-2">
+                                    <h4 className="font-bold text-green-800 dark:text-green-400 flex items-center"><Users className="w-4 h-4 mr-2"/> Kelompok Mahir</h4>
+                                    <span className="bg-white dark:bg-slate-800 text-green-700 dark:text-green-400 px-2 py-1 rounded-full text-xs font-bold shadow-sm">
+                                        {groupedByAbility[AbilityLevel.HIGH].length} Siswa
+                                    </span>
+                                </div>
+                                <div className="space-y-2 max-h-[400px] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-green-200">
+                                    {groupedByAbility[AbilityLevel.HIGH].map(r => (
+                                        <div key={r.id} className="bg-white dark:bg-slate-800 p-3 rounded-lg shadow-sm border border-green-100 dark:border-green-900/30 hover:shadow-md transition-shadow">
+                                            <div className="font-bold text-slate-800 dark:text-white text-sm">{r.studentName}</div>
+                                            <div className="flex justify-between mt-1 text-xs">
+                                                <span className="text-slate-500 dark:text-slate-400">{r.className}</span>
+                                                <span className="font-mono font-bold text-green-600 dark:text-green-400">{r.score}</span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Medium Ability Group */}
+                            <div className="bg-yellow-50 dark:bg-yellow-900/10 rounded-xl border border-yellow-200 dark:border-yellow-900/40 p-4">
+                                <div className="flex items-center justify-between mb-4 border-b border-yellow-200 dark:border-yellow-900/40 pb-2">
+                                    <h4 className="font-bold text-yellow-800 dark:text-yellow-400 flex items-center"><Users className="w-4 h-4 mr-2"/> Kelompok Sedang</h4>
+                                    <span className="bg-white dark:bg-slate-800 text-yellow-700 dark:text-yellow-400 px-2 py-1 rounded-full text-xs font-bold shadow-sm">
+                                        {groupedByAbility[AbilityLevel.MEDIUM].length} Siswa
+                                    </span>
+                                </div>
+                                <div className="space-y-2 max-h-[400px] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-yellow-200">
+                                    {groupedByAbility[AbilityLevel.MEDIUM].map(r => (
+                                        <div key={r.id} className="bg-white dark:bg-slate-800 p-3 rounded-lg shadow-sm border border-yellow-100 dark:border-yellow-900/30 hover:shadow-md transition-shadow">
+                                            <div className="font-bold text-slate-800 dark:text-white text-sm">{r.studentName}</div>
+                                            <div className="flex justify-between mt-1 text-xs">
+                                                <span className="text-slate-500 dark:text-slate-400">{r.className}</span>
+                                                <span className="font-mono font-bold text-yellow-600 dark:text-yellow-400">{r.score}</span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Basic Ability Group */}
+                            <div className="bg-red-50 dark:bg-red-900/10 rounded-xl border border-red-200 dark:border-red-900/40 p-4">
+                                <div className="flex items-center justify-between mb-4 border-b border-red-200 dark:border-red-900/40 pb-2">
+                                    <h4 className="font-bold text-red-800 dark:text-red-400 flex items-center"><Users className="w-4 h-4 mr-2"/> Kelompok Dasar</h4>
+                                    <span className="bg-white dark:bg-slate-800 text-red-700 dark:text-red-400 px-2 py-1 rounded-full text-xs font-bold shadow-sm">
+                                        {groupedByAbility[AbilityLevel.BASIC].length} Siswa
+                                    </span>
+                                </div>
+                                <div className="space-y-2 max-h-[400px] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-red-200">
+                                    {groupedByAbility[AbilityLevel.BASIC].map(r => (
+                                        <div key={r.id} className="bg-white dark:bg-slate-800 p-3 rounded-lg shadow-sm border border-red-100 dark:border-red-900/30 hover:shadow-md transition-shadow">
+                                            <div className="font-bold text-slate-800 dark:text-white text-sm">{r.studentName}</div>
+                                            <div className="flex justify-between mt-1 text-xs">
+                                                <span className="text-slate-500 dark:text-slate-400">{r.className}</span>
+                                                <span className="font-mono font-bold text-red-600 dark:text-red-400">{r.score}</span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </>
+                    ) : (
+                        <>
+                            {/* Visual Group */}
+                            <div className="bg-blue-50 dark:bg-blue-900/10 rounded-xl border border-blue-200 dark:border-blue-900/40 p-4">
+                                <div className="flex items-center justify-between mb-4 border-b border-blue-200 dark:border-blue-900/40 pb-2">
+                                    <h4 className="font-bold text-blue-800 dark:text-blue-400 flex items-center"><Eye className="w-4 h-4 mr-2"/> Kelompok Visual</h4>
+                                    <span className="bg-white dark:bg-slate-800 text-blue-700 dark:text-blue-400 px-2 py-1 rounded-full text-xs font-bold shadow-sm">
+                                        {groupedByStyle[LearningStyle.VISUAL].length} Siswa
+                                    </span>
+                                </div>
+                                <div className="space-y-2 max-h-[400px] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-blue-200">
+                                    {groupedByStyle[LearningStyle.VISUAL].map(r => (
+                                        <div key={r.id} className="bg-white dark:bg-slate-800 p-3 rounded-lg shadow-sm border border-blue-100 dark:border-blue-900/30 hover:shadow-md transition-shadow">
+                                            <div className="font-bold text-slate-800 dark:text-white text-sm">{r.studentName}</div>
+                                            <div className="flex justify-between mt-1 text-xs">
+                                                <span className="text-slate-500 dark:text-slate-400">{r.className}</span>
+                                                <span className="font-mono font-bold text-blue-600 dark:text-blue-400">{r.score}</span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Auditory Group */}
+                            <div className="bg-purple-50 dark:bg-purple-900/10 rounded-xl border border-purple-200 dark:border-purple-900/40 p-4">
+                                <div className="flex items-center justify-between mb-4 border-b border-purple-200 dark:border-purple-900/40 pb-2">
+                                    <h4 className="font-bold text-purple-800 dark:text-purple-400 flex items-center"><Ear className="w-4 h-4 mr-2"/> Kelompok Auditori</h4>
+                                    <span className="bg-white dark:bg-slate-800 text-purple-700 dark:text-purple-400 px-2 py-1 rounded-full text-xs font-bold shadow-sm">
+                                        {groupedByStyle[LearningStyle.AUDITORY].length} Siswa
+                                    </span>
+                                </div>
+                                <div className="space-y-2 max-h-[400px] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-purple-200">
+                                    {groupedByStyle[LearningStyle.AUDITORY].map(r => (
+                                        <div key={r.id} className="bg-white dark:bg-slate-800 p-3 rounded-lg shadow-sm border border-purple-100 dark:border-purple-900/30 hover:shadow-md transition-shadow">
+                                            <div className="font-bold text-slate-800 dark:text-white text-sm">{r.studentName}</div>
+                                            <div className="flex justify-between mt-1 text-xs">
+                                                <span className="text-slate-500 dark:text-slate-400">{r.className}</span>
+                                                <span className="font-mono font-bold text-purple-600 dark:text-purple-400">{r.score}</span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Kinesthetic Group */}
+                            <div className="bg-orange-50 dark:bg-orange-900/10 rounded-xl border border-orange-200 dark:border-orange-900/40 p-4">
+                                <div className="flex items-center justify-between mb-4 border-b border-orange-200 dark:border-orange-900/40 pb-2">
+                                    <h4 className="font-bold text-orange-800 dark:text-orange-400 flex items-center"><Activity className="w-4 h-4 mr-2"/> Kelompok Kinestetik</h4>
+                                    <span className="bg-white dark:bg-slate-800 text-orange-700 dark:text-orange-400 px-2 py-1 rounded-full text-xs font-bold shadow-sm">
+                                        {groupedByStyle[LearningStyle.KINESTHETIC].length} Siswa
+                                    </span>
+                                </div>
+                                <div className="space-y-2 max-h-[400px] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-orange-200">
+                                    {groupedByStyle[LearningStyle.KINESTHETIC].map(r => (
+                                        <div key={r.id} className="bg-white dark:bg-slate-800 p-3 rounded-lg shadow-sm border border-orange-100 dark:border-orange-900/30 hover:shadow-md transition-shadow">
+                                            <div className="font-bold text-slate-800 dark:text-white text-sm">{r.studentName}</div>
+                                            <div className="flex justify-between mt-1 text-xs">
+                                                <span className="text-slate-500 dark:text-slate-400">{r.className}</span>
+                                                <span className="font-mono font-bold text-orange-600 dark:text-orange-400">{r.score}</span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </>
+                    )}
+                </div>
+            </div>
+        )}
+
+        {/* SECTION 4: Existing Table View */}
+        {(activeAnalysisTab === 'history' || activeAnalysisTab === 'all') && (
+            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden transition-colors">
+                <div className="p-4 bg-slate-50 dark:bg-slate-700/50 border-b border-slate-200 dark:border-slate-600 font-semibold text-slate-700 dark:text-slate-200">
+                    Detail Riwayat Pengerjaan
+                </div>
+                <div className="overflow-x-auto">
+                    <table className="w-full text-sm text-left min-w-[700px]">
+                        <thead className="bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-medium border-b border-slate-100 dark:border-slate-700">
+                            <tr>
+                                <th className="px-6 py-3 whitespace-nowrap">Waktu</th>
+                                <th className="px-6 py-3 whitespace-nowrap">Nama Siswa</th>
+                                <th className="px-6 py-3 whitespace-nowrap">Kelas</th>
+                                <th className="px-6 py-3 whitespace-nowrap">Paket Soal</th>
+                                <th className="px-6 py-3 whitespace-nowrap">Nilai</th>
+                                <th className="px-6 py-3 whitespace-nowrap">Kemampuan</th>
+                                <th className="px-6 py-3 whitespace-nowrap">Gaya Belajar</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+                            {filteredResults.length === 0 && (
+                                <tr><td colSpan={7} className="text-center py-8 text-slate-400 dark:text-slate-500">Tidak ada data hasil kuis yang cocok dengan filter.</td></tr>
+                            )}
+                            {filteredResults.sort((a,b) => b.timestamp - a.timestamp).map(r => {
+                                const style = getStudentStyle(r.studentId);
+                                return (
+                                    <tr key={r.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                                        <td className="px-6 py-3 text-slate-500 dark:text-slate-400 whitespace-nowrap">{new Date(r.timestamp).toLocaleDateString()} {new Date(r.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</td>
+                                        <td className="px-6 py-3 font-medium text-slate-900 dark:text-white">{r.studentName}</td>
+                                        <td className="px-6 py-3 text-slate-600 dark:text-slate-300">{r.className}</td>
+                                        <td className="px-6 py-3 text-slate-600 dark:text-slate-300 font-mono text-xs"><span className="bg-slate-50 dark:bg-slate-700 px-2 py-0.5 rounded">{r.packetId}</span></td>
+                                        <td className="px-6 py-3 font-bold dark:text-white">{r.score}</td>
+                                        <td className="px-6 py-3">
+                                            <span className={`px-2 py-1 rounded-full text-xs font-bold ${
+                                                r.abilityLevel === AbilityLevel.HIGH ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' :
+                                                r.abilityLevel === AbilityLevel.MEDIUM ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400' :
+                                                (r.abilityLevel === AbilityLevel.BASIC || (r.abilityLevel as string) === 'Dasar') ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400' :
+                                                'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800'
+                                            }`}>
+                                                {r.abilityLevel || 'Menunggu Finalisasi'}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-3">
+                                            <span className={`px-2 py-1 rounded-full text-xs font-medium flex w-fit items-center gap-1 ${
+                                                style === LearningStyle.VISUAL ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400' :
+                                                style === LearningStyle.AUDITORY ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400' :
+                                                'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400'
+                                            }`}>
+                                                {style === LearningStyle.VISUAL && <Eye className="w-3 h-3"/>}
+                                                {style === LearningStyle.AUDITORY && <Ear className="w-3 h-3"/>}
+                                                {style === LearningStyle.KINESTHETIC && <Activity className="w-3 h-3"/>}
+                                                {style}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        )}
     </div>
   );
 };
