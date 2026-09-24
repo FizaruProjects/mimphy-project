@@ -239,7 +239,7 @@ export const TeacherResults: React.FC<Props> = ({ results, packets, onRefresh })
             </div>
         )}
 
-        {/* Global Filter Bar */}
+        {/* Global Filter Bar (Normal Flow - No Freeze) */}
         <div className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-stone-200 dark:border-slate-700 flex flex-col xl:flex-row xl:items-center justify-between gap-4 transition-colors">
             <div className="flex items-center space-x-2 text-stone-600 dark:text-slate-400">
                 <RefreshCw className="w-4 h-4 animate-spin-slow" />
@@ -288,69 +288,71 @@ export const TeacherResults: React.FC<Props> = ({ results, packets, onRefresh })
             </div>
         </div>
 
-        {/* Top Sub-Tab Navigation Bar for Quick Access (Fixes scrolling friction) */}
-        <div className="sticky top-2 z-30 bg-white/90 dark:bg-slate-800/90 backdrop-blur-md p-2 rounded-2xl border border-stone-200 dark:border-slate-700 shadow-md flex items-center justify-between overflow-x-auto gap-2">
-            <div className="flex items-center space-x-1.5 min-w-max">
-                <button
-                    onClick={() => {
-                        setActiveAnalysisTab('word_cloud');
-                    }}
-                    className={`px-4 py-2 text-xs font-extrabold rounded-xl flex items-center transition-all ${
-                        activeAnalysisTab === 'word_cloud'
-                            ? 'bg-red-600 text-white shadow-md shadow-red-200 dark:shadow-none'
-                            : 'text-stone-600 dark:text-slate-300 hover:bg-stone-100 dark:hover:bg-slate-700'
-                    }`}
-                >
-                    <Cloud className="w-4 h-4 mr-2 text-red-100" /> Pemetaan Materi (Word Cloud)
-                </button>
-                <button
-                    onClick={() => {
-                        setActiveAnalysisTab('distribution');
-                    }}
-                    className={`px-4 py-2 text-xs font-extrabold rounded-xl flex items-center transition-all ${
-                        activeAnalysisTab === 'distribution'
-                            ? 'bg-red-600 text-white shadow-md shadow-red-200 dark:shadow-none'
-                            : 'text-stone-600 dark:text-slate-300 hover:bg-stone-100 dark:hover:bg-slate-700'
-                    }`}
-                >
-                    <BarChart3 className="w-4 h-4 mr-2 text-red-100" /> Statistik &amp; Distribusi
-                </button>
-                <button
-                    onClick={() => {
-                        setActiveAnalysisTab('groups');
-                    }}
-                    className={`px-4 py-2 text-xs font-extrabold rounded-xl flex items-center transition-all ${
-                        activeAnalysisTab === 'groups'
-                            ? 'bg-red-600 text-white shadow-md shadow-red-200 dark:shadow-none'
-                            : 'text-stone-600 dark:text-slate-300 hover:bg-stone-100 dark:hover:bg-slate-700'
-                    }`}
-                >
-                    <Users className="w-4 h-4 mr-2 text-red-100" /> Kelompok Belajar
-                </button>
-                <button
-                    onClick={() => {
-                        setActiveAnalysisTab('history');
-                    }}
-                    className={`px-4 py-2 text-xs font-extrabold rounded-xl flex items-center transition-all ${
-                        activeAnalysisTab === 'history'
-                            ? 'bg-red-600 text-white shadow-md shadow-red-200 dark:shadow-none'
-                            : 'text-stone-600 dark:text-slate-300 hover:bg-stone-100 dark:hover:bg-slate-700'
-                    }`}
-                >
-                    <FileSpreadsheet className="w-4 h-4 mr-2 text-red-100" /> Riwayat Nilai
-                </button>
-                <button
-                    onClick={() => {
-                        setActiveAnalysisTab('all');
-                    }}
-                    className={`px-4 py-2 text-xs font-extrabold rounded-xl flex items-center transition-all ${
-                        activeAnalysisTab === 'all'
-                            ? 'bg-stone-800 dark:bg-slate-700 text-white shadow-sm'
-                            : 'text-stone-500 dark:text-slate-400 hover:bg-stone-100 dark:hover:bg-slate-700'
-                    }`}
-                >
-                    <Layers className="w-4 h-4 mr-2 text-slate-300" /> Semua Tampilan
-                </button>
+        {/* Top Sub-Tab Navigation Bar (Sticky Freeze with Expanded Frosted Glass Blur Mask) */}
+        <div className="sticky -top-4 z-40 -mt-2 pt-5 pb-3 -mx-4 lg:-mx-8 px-4 lg:px-8 bg-slate-100/80 dark:bg-slate-900/80 backdrop-blur-3xl backdrop-saturate-150 transition-all border-b border-white/30 dark:border-slate-800/50 shadow-sm">
+            <div className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-2xl p-2 rounded-2xl border border-white/90 dark:border-slate-700/80 shadow-xl shadow-slate-200/50 dark:shadow-none flex items-center justify-between overflow-x-auto gap-2">
+                <div className="flex items-center space-x-1.5 min-w-max">
+                    <button
+                        onClick={() => {
+                            setActiveAnalysisTab('word_cloud');
+                        }}
+                        className={`px-4 py-2.5 text-xs font-extrabold rounded-xl flex items-center transition-all duration-200 ${
+                            activeAnalysisTab === 'word_cloud'
+                                ? 'bg-gradient-to-r from-red-600 to-rose-600 text-white shadow-md shadow-red-500/25 border border-red-500/30 scale-[1.02]'
+                                : 'text-slate-700 dark:text-slate-300 hover:bg-white/80 dark:hover:bg-slate-700/80 hover:text-red-600 dark:hover:text-red-400 border border-transparent'
+                        }`}
+                    >
+                        <Cloud className="w-4 h-4 mr-2 text-red-100" /> Pemetaan Materi (Word Cloud)
+                    </button>
+                    <button
+                        onClick={() => {
+                            setActiveAnalysisTab('distribution');
+                        }}
+                        className={`px-4 py-2.5 text-xs font-extrabold rounded-xl flex items-center transition-all duration-200 ${
+                            activeAnalysisTab === 'distribution'
+                                ? 'bg-gradient-to-r from-red-600 to-rose-600 text-white shadow-md shadow-red-500/25 border border-red-500/30 scale-[1.02]'
+                                : 'text-slate-700 dark:text-slate-300 hover:bg-white/80 dark:hover:bg-slate-700/80 hover:text-red-600 dark:hover:text-red-400 border border-transparent'
+                        }`}
+                    >
+                        <BarChart3 className="w-4 h-4 mr-2 text-red-100" /> Statistik &amp; Distribusi
+                    </button>
+                    <button
+                        onClick={() => {
+                            setActiveAnalysisTab('groups');
+                        }}
+                        className={`px-4 py-2.5 text-xs font-extrabold rounded-xl flex items-center transition-all duration-200 ${
+                            activeAnalysisTab === 'groups'
+                                ? 'bg-gradient-to-r from-red-600 to-rose-600 text-white shadow-md shadow-red-500/25 border border-red-500/30 scale-[1.02]'
+                                : 'text-slate-700 dark:text-slate-300 hover:bg-white/80 dark:hover:bg-slate-700/80 hover:text-red-600 dark:hover:text-red-400 border border-transparent'
+                        }`}
+                    >
+                        <Users className="w-4 h-4 mr-2 text-red-100" /> Kelompok Belajar
+                    </button>
+                    <button
+                        onClick={() => {
+                            setActiveAnalysisTab('history');
+                        }}
+                        className={`px-4 py-2.5 text-xs font-extrabold rounded-xl flex items-center transition-all duration-200 ${
+                            activeAnalysisTab === 'history'
+                                ? 'bg-gradient-to-r from-red-600 to-rose-600 text-white shadow-md shadow-red-500/25 border border-red-500/30 scale-[1.02]'
+                                : 'text-slate-700 dark:text-slate-300 hover:bg-white/80 dark:hover:bg-slate-700/80 hover:text-red-600 dark:hover:text-red-400 border border-transparent'
+                        }`}
+                    >
+                        <FileSpreadsheet className="w-4 h-4 mr-2 text-red-100" /> Riwayat Nilai
+                    </button>
+                    <button
+                        onClick={() => {
+                            setActiveAnalysisTab('all');
+                        }}
+                        className={`px-4 py-2.5 text-xs font-extrabold rounded-xl flex items-center transition-all duration-200 ${
+                            activeAnalysisTab === 'all'
+                                ? 'bg-slate-900 dark:bg-slate-700 text-white shadow-md border border-slate-700'
+                                : 'text-slate-500 dark:text-slate-400 hover:bg-white/80 dark:hover:bg-slate-700/80 border border-transparent'
+                        }`}
+                    >
+                        <Layers className="w-4 h-4 mr-2 text-slate-300" /> Semua Tampilan
+                    </button>
+                </div>
             </div>
         </div>
 
